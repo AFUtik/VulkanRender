@@ -8,23 +8,27 @@
 
 struct GLFWwindow;
 
-class Window {
-public:
-	static int width;
-	static int height;
-	static GLFWwindow* window;
+namespace myvk {
+	class Window {
+	public:
+		static int width;
+		static int height;
+		static GLFWwindow* window;
 
-	static int init(int width, int height, const char* title);
+		static int init(int width, int height, const char* title);
 
-	Window(int width, int height, const char* title);
-	~Window();
+		Window(int width, int height, const char* title);
+		~Window();
 
-	void createWindowSurface(VkInstance instance, VkSurfaceKHR* surface);
+		void createWindowSurface(VkInstance instance, VkSurfaceKHR* surface);
+		VkExtent2D getExtent() { return { static_cast<uint32_t>(width), static_cast<uint32_t>(height) }; }
 
-	static bool isShouldClose();
-	static void setShouldClose(bool flag);
-	static void swapBuffers();
-	static void setCursorMode(int mode);
-};
+		static bool isShouldClose();
+		static void setShouldClose(bool flag);
+		static void swapBuffers();
+		static void setCursorMode(int mode);
+	};
+}
+
 
 #endif

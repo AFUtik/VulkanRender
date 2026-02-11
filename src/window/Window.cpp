@@ -2,6 +2,8 @@
 
 #include "Window.hpp"
 
+using namespace myvk;
+
 GLFWwindow* Window::window = nullptr;
 int Window::width = 0;
 int Window::height = 0;

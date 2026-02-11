@@ -2,6 +2,7 @@
 
 #include "Device.hpp"
 
+
 #include <vector>
 #include <string>
 
@@ -9,7 +10,6 @@ namespace myvk {
 	struct PipelineConfigInfo {
 		VkViewport viewport;
 		VkRect2D scissor;
-		VkPipelineViewportStateCreateInfo viewportInfo;
 		VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
 		VkPipelineRasterizationStateCreateInfo rasterizationInfo;
 		VkPipelineMultisampleStateCreateInfo multisampleInfo;
@@ -29,6 +29,8 @@ namespace myvk {
 			const std::string& fragFilepath,
 			const PipelineConfigInfo &configInfo);
 		~Pipeline();
+
+		void bind(VkCommandBuffer commandBuffer);
 
 		Pipeline(const Pipeline&) = delete;
 		void operator=(const Pipeline&) = delete;

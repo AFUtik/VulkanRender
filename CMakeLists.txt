@@ -18,6 +18,10 @@ project ("VulkanRender")
 
 add_executable (${PROJECT_NAME} ${SOURCES})
 
+if (MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE /W4)
+endif()
+
 find_package(Vulkan REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
