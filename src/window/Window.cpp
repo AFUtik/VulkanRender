@@ -4,11 +4,18 @@
 
 using namespace myvk;
 
-GLFWwindow* Window::window = nullptr;
-int Window::width = 0;
-int Window::height = 0;
+Window::Window(int width, int height, const char* title) : width(width), height(height) {
+	init(title);
+}
 
-int Window::init(int width, int height, const char* title) {
+Window::~Window() {
+	if (window) {
+		glfwDestroyWindow(window);
+		glfwTerminate();
+	}
+}
+
+int Window::init(const char* title) {
 	if (!glfwInit()) {
 		std::cout << "Failed to initialize GLFW" << std::endl;
 		return -1;
@@ -23,27 +30,22 @@ int Window::init(int width, int height, const char* title) {
 		glfwTerminate();
 		return -1;
 	}
-
-	Window::width = width;
-	Window::height = height;
+	glfwSetWindowUserPointer(window, this);
+	glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 	return 0;
-}
-
-Window::Window(int width, int height, const char* title) {
-	init(width, height, title);
-}
-
-Window::~Window() {
-	if (window) {
-		glfwDestroyWindow(window);
-		glfwTerminate();
-	}
 }
 
 void Window::createWindowSurface(VkInstance instance, VkSurfaceKHR* surface) {
 	if (glfwCreateWindowSurface(instance, window, nullptr, surface) != VK_SUCCESS) {
 		throw std::runtime_error("failed to craete window surface");
 	}
+}
+
+void Window::framebufferResizeCallback(GLFWwindow* glfwWindow, int width, int height) {
+	auto window = reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfwWindow));
+	window->frameBufferResized = true;
+	window->width = width;
+	window->height = height;
 }
 
 void Window::setCursorMode(int mode) {

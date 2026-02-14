@@ -4,6 +4,7 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace myvk {
 
@@ -12,10 +13,13 @@ namespace myvk {
         static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
         SwapChain(Device& deviceRef, VkExtent2D windowExtent);
+        SwapChain(Device& deviceRef, VkExtent2D windowExtent, std::shared_ptr<SwapChain> previous);
         ~SwapChain();
 
+        void init();
+
         SwapChain(const SwapChain&) = delete;
-        void operator=(const SwapChain&) = delete;
+        SwapChain& operator=(const SwapChain&) = delete;
 
         VkFramebuffer getFrameBuffer(int index) { return swapChainFramebuffers[index]; }
         VkRenderPass getRenderPass() { return renderPass; }
@@ -60,6 +64,8 @@ namespace myvk {
         std::vector<VkImageView> depthImageViews;
         std::vector<VkImage> swapChainImages;
         std::vector<VkImageView> swapChainImageViews;
+
+        std::shared_ptr<SwapChain> oldSwapChain;
 
         Device& device;
         VkExtent2D windowExtent;

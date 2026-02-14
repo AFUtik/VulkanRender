@@ -17,7 +17,7 @@ public:
 	static bool _cursor_locked;
 	static bool _cursor_started;
 
-	static int init();
+	static int init(GLFWwindow* window);
 	static void pullEvents();
 
 	static bool pressed(int keycode);
@@ -26,7 +26,7 @@ public:
 	static bool clicked(int button);
 	static bool jclicked(int button);
 
-	static void toggle_cursor();
+	static void toggle_cursor(myvk::Window* window);
 };
 
 #endif /* WINDOW_EVENTS_H_ */

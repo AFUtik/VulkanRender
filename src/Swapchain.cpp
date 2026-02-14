@@ -11,6 +11,20 @@
 
 namespace myvk {
     SwapChain::SwapChain(Device& deviceRef, VkExtent2D extent) : device{ deviceRef }, windowExtent{ extent } {
+        init();
+    }
+
+    SwapChain::SwapChain(Device& deviceRef, VkExtent2D windowExtent, std::shared_ptr<SwapChain> previous) : 
+        device{ deviceRef }, 
+        windowExtent{ windowExtent }, 
+        oldSwapChain{ previous } 
+    {
+        init();
+        oldSwapChain = nullptr;
+    }
+
+
+    void SwapChain::init() {
         createSwapChain();
         createImageViews();
         createRenderPass();
@@ -51,31 +65,24 @@ namespace myvk {
     }
 
     VkResult SwapChain::acquireNextImage(uint32_t* imageIndex) {
-        vkWaitForFences(
-            device.device(),
-            1,
-            &inFlightFences[currentFrame],
-            VK_TRUE,
-            std::numeric_limits<uint64_t>::max());
-
+        vkWaitForFences(device.device(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
         VkResult result = vkAcquireNextImageKHR(
             device.device(),
             swapChain,
             std::numeric_limits<uint64_t>::max(),
-            imageAvailableSemaphores[currentFrame],  // must be a not signaled semaphore
+            imageAvailableSemaphores[currentFrame],
             VK_NULL_HANDLE,
-            imageIndex);
-
-        return result;
-    }
-
-    VkResult SwapChain::submitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex) {
+            imageIndex
+        );
         if (imagesInFlight[*imageIndex] != VK_NULL_HANDLE) {
             vkWaitForFences(device.device(), 1, &imagesInFlight[*imageIndex], VK_TRUE, UINT64_MAX);
         }
         imagesInFlight[*imageIndex] = inFlightFences[currentFrame];
+        return result;
+    }
 
-        VkSubmitInfo submitInfo = {};
+    VkResult SwapChain::submitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex) {
+        VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
         VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
@@ -92,12 +99,12 @@ namespace myvk {
         submitInfo.pSignalSemaphores = signalSemaphores;
 
         vkResetFences(device.device(), 1, &inFlightFences[currentFrame]);
-        if (vkQueueSubmit(device.graphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) !=
-            VK_SUCCESS) {
+
+        if (vkQueueSubmit(device.graphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
             throw std::runtime_error("failed to submit draw command buffer!");
         }
 
-        VkPresentInfoKHR presentInfo = {};
+        VkPresentInfoKHR presentInfo{};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
         presentInfo.waitSemaphoreCount = 1;
@@ -109,7 +116,7 @@ namespace myvk {
 
         presentInfo.pImageIndices = imageIndex;
 
-        auto result = vkQueuePresentKHR(device.presentQueue(), &presentInfo);
+        VkResult result = vkQueuePresentKHR(device.presentQueue(), &presentInfo);
 
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 
@@ -160,7 +167,7 @@ namespace myvk {
         createInfo.presentMode = presentMode;
         createInfo.clipped = VK_TRUE;
 
-        createInfo.oldSwapchain = VK_NULL_HANDLE;
+        createInfo.oldSwapchain = oldSwapChain == nullptr ? VK_NULL_HANDLE : oldSwapChain->swapChain;
 
         if (vkCreateSwapchainKHR(device.device(), &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
             throw std::runtime_error("failed to create swap chain!");
@@ -358,7 +365,7 @@ namespace myvk {
     VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(
         const std::vector<VkSurfaceFormatKHR>& availableFormats) {
         for (const auto& availableFormat : availableFormats) {
-            if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM &&
+            if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
                 availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
                 return availableFormat;
             }

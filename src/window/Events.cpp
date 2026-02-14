@@ -49,8 +49,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 }
 
-int Events::init(){
-	GLFWwindow* window = myvk::Window::window;
+int Events::init(GLFWwindow *window){
 	_keys = new bool[1032];
 	_frames = new uint[1032];
 
@@ -85,9 +84,9 @@ bool Events::jclicked(int button){
 	return _keys[index] && _frames[index] == _current;
 }
 
-void Events::toggle_cursor() {
+void Events::toggle_cursor(myvk::Window *window) {
 	_cursor_locked = !_cursor_locked;
-	myvk::Window::setCursorMode(_cursor_locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+	window->setCursorMode(_cursor_locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
 }
 
 
