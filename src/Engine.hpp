@@ -1,14 +1,16 @@
 #pragma once
 
+#include "window/Events.hpp"
 #include "window/Window.hpp"
-#include "Pipeline.hpp"
-#include "Swapchain.hpp"
+#include "Renderer.hpp"
 #include "Model.hpp"
+#include "Camera.hpp"
+#include "Descriptors.hpp"
+#include "Buffer.hpp"
+#include "FrameInfo.hpp"
 
 #include <memory>
 #include <vector>
-
-const std::string absolutePath = "C:\\cplusplus\\VulkanRender\\VulkanRender\\";
 
 namespace myvk {
 	class Engine {
@@ -25,22 +27,14 @@ namespace myvk {
 		void run();
 	private:
 		void loadModels();
-		void createPipelineLayout();
-		void createPipeline();
-		void createCommandBuffers();
-		void drawFrame();
-		void recreateSwapChain();
-		void recordCommandBuffers(int imageIndex);
-		void freeCommandBuffers();
 
 		Window window{ WIDTH, HEIGHT, "Vulkan Engine" };
 		Device device{ window };
-		
-		std::unique_ptr<SwapChain> swapchain;
-		std::unique_ptr<Pipeline> pipeline;
-		VkPipelineLayout pipelineLayout;
-		std::vector<VkCommandBuffer> commandBuffers;
+		Renderer renderer{ window, device };
 
+		Camera camera;
+
+		std::unique_ptr<DescriptorPool> globalPool{};
 		std::unique_ptr<Model> model;
 	};
 }

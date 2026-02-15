@@ -1,209 +1,154 @@
 #include "Engine.hpp"
+#include "Buffer.hpp"
+#include "Descriptors.hpp"
+#include "RenderSystem.hpp"
+#include "Swapchain.hpp"
+#include "vulkan/vulkan_core.h"
 
+#include <memory>
 #include <stdexcept>
 #include <array>
+#include <thread>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 using namespace myvk;
 
-struct PushConstantData {
-	glm::vec2 offset;
-	alignas(16) glm::vec3 color;
+struct GlobalUbo {
+	glm::mat4 projview{1.f};
 };
 
-Engine::Engine() {
+Engine::Engine() : camera(window.width, window.height, glm::dvec3(0, 0, 0), glm::radians(90.0f)) {
+	Events::init(window.window);
+
+	globalPool = DescriptorPool::Builder(device)
+		.setMaxSets(SwapChain::MAX_FRAMES_IN_FLIGHT)
+		.addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, SwapChain::MAX_FRAMES_IN_FLIGHT)
+		.build();
+
 	loadModels();
-	createPipelineLayout();
-	recreateSwapChain();
-	createCommandBuffers();
 }
 
 Engine::~Engine() {
-	vkDestroyPipelineLayout(device.device(), pipelineLayout, nullptr);
+
 }
 
 void Engine::run() {
-	while (!window.isShouldClose()) {
-		glfwPollEvents();
-		drawFrame();
+	std::vector<std::unique_ptr<Buffer>> uboBuffers(SwapChain::MAX_FRAMES_IN_FLIGHT);
+	for(int i = 0; i < uboBuffers.size(); i++) {
+		uboBuffers[i] = std::make_unique<Buffer>(
+			device, 
+			sizeof(GlobalUbo),
+			1,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+		uboBuffers[i]->map();
 	}
 
+	auto globalSetLayout = DescriptorSetLayout::Builder(device)
+		.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+		.build();
+
+	std::vector<VkDescriptorSet> globalDescriptorSets(SwapChain::MAX_FRAMES_IN_FLIGHT);
+	for(int i = 0; i < globalDescriptorSets.size(); i++) {
+		auto bufferInfo = uboBuffers[i]->descriptorInfo();
+		DescriptorWriter(*globalSetLayout, *globalPool)
+			.writeBuffer(0, &bufferInfo)
+			.build(globalDescriptorSets[i]);
+	}
+
+	RenderSystem renderSystem(device, renderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout());
+
+	Events::toggle_cursor(&window);
+	double lastTime = glfwGetTime();
+	double timeAccu = 0.0f;
+	const double target_fps = 60.0;
+	const double H = 1.0f / target_fps;
+	const double speed = 2.0;
+	float camX = 0.0f;
+	float camY = 0.0f;
+	while (!window.isShouldClose()) {
+		double currentTime = glfwGetTime();
+		double frameTime = currentTime - lastTime;
+		lastTime = currentTime;
+
+		timeAccu += frameTime;
+		if (timeAccu >= H) {
+			if (Events::pressed(GLFW_KEY_W)) {
+				camera.translate(camera.zdir() * H * speed);
+			}
+			if (Events::pressed(GLFW_KEY_S)) {
+				camera.translate(-camera.zdir() * H * speed);
+			}
+			if (Events::pressed(GLFW_KEY_D)) {
+				camera.translate(camera.xdir() * H * speed);
+			}
+			if (Events::pressed(GLFW_KEY_A)) {
+				camera.translate(-camera.xdir() * H * speed);
+			}
+			if (Events::jpressed(GLFW_KEY_G)) {
+				model->transform.rotateLocal(0.05, { 1.0, 0.0f, 0.0f });
+			}
+			if (Events::_cursor_locked) {
+				camY += -Events::deltaY / window.height * 2;
+				camX += -Events::deltaX / window.height * 2;
+
+				if (camY < -radians(89.0f)) {
+					camY = -radians(89.0f);
+				}
+				if (camY > radians(89.0f)) {
+					camY = radians(89.0f);
+				}
+
+				camera.setRotation(glm::mat4(1.0f));
+				camera.rotate(-camY, camX, 0);
+			}
+
+			if (auto commandBuffer = renderer.beginFrame()) {
+				renderer.beginSwapChainRenderPass(commandBuffer);
+
+				int frameIndex = renderer.getFrameIndex();
+				FrameInfo frameInfo{
+					frameIndex,
+					(float)frameTime,
+					commandBuffer,
+					camera,
+					globalDescriptorSets[frameIndex]};
+
+				camera.update();
+
+				GlobalUbo ubo{};
+				ubo.projview = camera.getProjview();
+				
+				uboBuffers[frameIndex]->writeToBuffer(&ubo);
+				uboBuffers[frameIndex]->flush();
+
+				renderSystem.render(frameInfo, model.get());
+
+				renderer.endSwapChainRenderPass(commandBuffer);
+				renderer.endFrame();
+			}
+			timeAccu -= H;
+		}
+		else {
+			double sleepTime = H - timeAccu;
+			std::this_thread::sleep_for(std::chrono::duration<double>(sleepTime));
+		}
+		Events::pullEvents();
+	}
 	vkDeviceWaitIdle(device.device());
 }
 
 void Engine::loadModels() {
 	std::vector<Model::Vertex> vertices{
-		{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-		{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-		{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+		{{0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+		{{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+		{{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}}
 	};
 
 	model = std::make_unique<Model>(device, vertices);
-}
-
-void Engine::createPipelineLayout() {
-	VkPushConstantRange pushConstantRange{};
-	pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-	pushConstantRange.offset = 0;
-	pushConstantRange.size = sizeof(pushConstantRange);
-
-	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 0;
-	pipelineLayoutInfo.pSetLayouts = nullptr;
-	pipelineLayoutInfo.pushConstantRangeCount = 1;
-	pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-	if (vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr, &pipelineLayout) !=
-		VK_SUCCESS) {
-		throw std::runtime_error("failed to create pipeline layout!");
-	}
-}
-
-
-void Engine::createPipeline() {
-	assert(swapchain != nullptr && "Cannot create pipeline before swap chain");
-	assert(pipelineLayout != nullptr && "Cannot create pipeline before pipeline layout");
-
-	PipelineConfigInfo pipelineConfig{};
-	Pipeline::defaultPipelineConfigInfo(pipelineConfig);
-	pipelineConfig.renderPass = swapchain->getRenderPass();
-	pipelineConfig.pipelineLayout = pipelineLayout;
-	pipeline = std::make_unique<Pipeline>(
-		device,
-		absolutePath+"resources/shaders/shader.vert.spv",
-		absolutePath+"resources/shaders/shader.frag.spv",
-		pipelineConfig);
-
-}
-
-void Engine::createCommandBuffers() {
-	commandBuffers.resize(swapchain->imageCount());
-
-	VkCommandBufferAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandPool = device.getCommandPool();
-	allocInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
-
-	if (vkAllocateCommandBuffers(device.device(), &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
-		throw std::runtime_error("failed to allocate command buffers");
-	}
-}
-
-void Engine::drawFrame() {
-	uint32_t imageIndex;
-	auto result = swapchain->acquireNextImage(&imageIndex);
-
-	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-		recreateSwapChain();
-		return;
-	}
-
-	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-		throw std::runtime_error("failed to acquire swap chain image!");
-	}
-
-	recordCommandBuffers(imageIndex);
-	result = swapchain->submitCommandBuffers(&commandBuffers[imageIndex], &imageIndex);
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
-		window.wasWindowResized()) {
-		window.resetWindowResizedFlag();
-		recreateSwapChain();
-		return;
-	}
-	else if (result != VK_SUCCESS) {
-		throw std::runtime_error("failed to present swap chain image!");
-	}
-}
-
-void Engine::recreateSwapChain() {
-	auto extent = window.getExtent();
-	while (extent.width == 0 || extent.height == 0) {
-		extent = window.getExtent();
-		glfwWaitEvents();
-	}
-	vkDeviceWaitIdle(device.device());
-
-	if (swapchain == nullptr) {
-		swapchain = std::make_unique<SwapChain>(device, extent);
-	}
-	else {
-		swapchain = std::make_unique<SwapChain>(device, extent, std::move(swapchain));
-		if (swapchain->imageCount() != commandBuffers.size()) {
-			freeCommandBuffers();
-			createCommandBuffers();
-		}
-	}
-	createPipeline();
-}
-
-void Engine::recordCommandBuffers(int imageIndex) {
-	VkCommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-	if (vkBeginCommandBuffer(commandBuffers[imageIndex], &beginInfo) != VK_SUCCESS) {
-		throw std::runtime_error("failed to begin recording command buffer!");
-	}
-
-	VkRenderPassBeginInfo renderPassInfo{};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = swapchain->getRenderPass();
-	renderPassInfo.framebuffer = swapchain->getFrameBuffer(imageIndex);
-
-	renderPassInfo.renderArea.offset = {0, 0};
-	renderPassInfo.renderArea.extent = swapchain->getSwapChainExtent();
-
-	std::array<VkClearValue, 2> clearValues{};
-	clearValues[0].color = {0.1f, 0.1f, 0.1f, 1.0f};
-	clearValues[1].depthStencil = {1.0f, 0};
-	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-	renderPassInfo.pClearValues = clearValues.data();
-
-	vkCmdBeginRenderPass(commandBuffers[imageIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-	VkViewport viewport{};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = static_cast<float>(swapchain->getSwapChainExtent().width);
-	viewport.height = static_cast<float>(swapchain->getSwapChainExtent().height);
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-	VkRect2D scissor{{0, 0}, swapchain->getSwapChainExtent()};
-	vkCmdSetViewport(commandBuffers[imageIndex], 0, 1, &viewport);
-	vkCmdSetScissor(commandBuffers[imageIndex], 0, 1, &scissor);
-
-	pipeline->bind(commandBuffers[imageIndex]);
-	model->bind(commandBuffers[imageIndex]);
-
-	for (int i = 0; i < 4; i++) {
-		PushConstantData push{};
-		push.offset = { 0.0f, -0.4f + i * 0.25f };
-		push.color = {0.0f, 0.0f, 0.2f + 0.2f * i};
-		
-		vkCmdPushConstants(
-			commandBuffers[imageIndex],
-			pipelineLayout, 
-			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 
-			0, 
-			sizeof(PushConstantData), 
-			&push);
-		model->draw(commandBuffers[imageIndex]);
-	}
-
-	vkCmdEndRenderPass(commandBuffers[imageIndex]);
-	if (vkEndCommandBuffer(commandBuffers[imageIndex]) != VK_SUCCESS) {
-		throw std::runtime_error("failed to record command buffer!");
-	}
-}
-
-void Engine::freeCommandBuffers() {
-	vkFreeCommandBuffers(
-		device.device(),
-		device.getCommandPool(),
-		static_cast<uint32_t>(commandBuffers.size()),
-		commandBuffers.data());
-	commandBuffers.clear();
 }

@@ -1,0 +1,7 @@
+-Isrc
+-IE:\Cpp\vcpkg\installed\x64-windows\include
+-std=c++20
+-Wno-macro-redefined
+-Wno-unknown-pragmas
+-Wno-deprecated-declarations
+-Wno-unused-parameter

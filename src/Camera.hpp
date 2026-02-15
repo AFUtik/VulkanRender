@@ -1,0 +1,69 @@
+#pragma once
+
+#include "glm/ext/vector_double3.hpp"
+#include <glm/glm.hpp>
+#include <glm/ext.hpp>
+
+using namespace glm;
+
+class Camera {
+	//Frustum frustum;
+
+	const double REBASE_GRANULARITY = 1000.0;
+
+	void updateVectors();
+
+	int width;
+	int height;
+
+	dvec3 x_dir;
+	dvec3 y_dir;
+	dvec3 z_dir;
+
+	dvec3 originPosition;
+	dvec3 offsetPosition;
+	dvec3 accumulatedShift = dvec3(0.0);
+
+	bool rebased_dirty = true;
+
+	float fov;
+	mat4 rotation;
+	mat4 view;
+	mat4 proj;
+	mat4 projview;
+
+	dvec3 getRebaseShift();
+public:
+	Camera(int width, int height, dvec3 position, float fov);
+
+	//inline Frustum& getFrustum() { return frustum; }
+
+	inline void setxdir(const glm::dvec3& dir) { x_dir = dir; }
+	inline void setydir(const glm::dvec3& dir) { y_dir = dir; }
+	inline void setzdir(const glm::dvec3& dir) { z_dir = dir; }
+
+	inline const dvec3& xdir() { return x_dir; }
+	inline const dvec3& ydir() { return y_dir; }
+	inline const dvec3& zdir() { return z_dir; }
+
+	inline void setRotation(const glm::mat4& rot) { rotation = rot; }
+
+	inline dvec3& getPosition() { return originPosition; }
+
+	void translate(const glm::dvec3& dp);
+	void set(const glm::dvec3& p);
+	void rotate(float x, float y, float z);
+
+	void update();
+
+	const mat4& getProjview();
+	mat4 getProjection();
+	mat4 getView();
+
+	vec3 getViewDir();
+
+	inline const dvec3& getWorldShift() const { return accumulatedShift; };
+	void originRebase();
+
+	inline bool isRebased() { return rebased_dirty; }
+};

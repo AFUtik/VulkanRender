@@ -28,11 +28,11 @@ namespace myvk {
 
 		bool wasWindowResized() { return frameBufferResized; }
 		void resetWindowResizedFlag() { frameBufferResized = false; }
-	private:
-		static void framebufferResizeCallback(GLFWwindow* glfwWindow, int width, int height);
 
 		int width;
 		int height;
+	private:
+		static void framebufferResizeCallback(GLFWwindow* glfwWindow, int width, int height);
 		bool frameBufferResized = false;
 	};
 }

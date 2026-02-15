@@ -25,16 +25,14 @@ endif()
 find_package(Vulkan REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
-find_package(ZLIB REQUIRED)
-find_package(PNG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
+find_package(Stb REQUIRED)
 
 target_link_libraries(${PROJECT_NAME} 
 	glfw 
 	GLEW::GLEW 
-	ZLIB::ZLIB 
-	PNG::PNG 
 	glm::glm
 	Vulkan::Vulkan
-	imgui::imgui)
+	imgui::imgui
+	${Stb_INCLUDE_DIR})

@@ -7,7 +7,6 @@
 #include <string>
 
 namespace myvk {
-
 	struct PipelineConfigInfo {
 		VkPipelineViewportStateCreateInfo viewportInfo;
 		VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
