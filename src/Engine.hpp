@@ -1,5 +1,7 @@
 #pragma once
 
+#include "glm/gtc/type_precision.hpp"
+#include "vulkan/vulkan_core.h"
 #include "window/Events.hpp"
 #include "window/Window.hpp"
 #include "Renderer.hpp"
@@ -8,6 +10,7 @@
 #include "Descriptors.hpp"
 #include "Buffer.hpp"
 #include "FrameInfo.hpp"
+#include "Texture.hpp"
 
 #include <memory>
 #include <vector>
@@ -26,6 +29,14 @@ namespace myvk {
 
 		void run();
 	private:
+		void updateTextureImage(Texture* texture, u32 imageWidth, u32 imageHeight, VkFormat texFormat, const void* pPixels);
+
+		void createImage(Texture* texture, u32 imageWidth, u32 imageHeight, VkFormat texFormat,
+						 VkImageUsageFlags usageFlags, VkMemoryPropertyFlagBits propertyFlags);
+		void createTextureImageFromData(Texture* texture, const void* pPixels, 
+										u32 imageWidth, u32 imageHeight, VkFormat texFormat);
+		void createTexture(const char *pFilename, Texture *texture);
+
 		void loadModels();
 
 		Window window{ WIDTH, HEIGHT, "Vulkan Engine" };

@@ -53,6 +53,7 @@ namespace myvk {
         pickPhysicalDevice();
         createLogicalDevice();
         createCommandPool();
+        createAllocator();
     }
 
     Device::~Device() {
@@ -65,6 +66,9 @@ namespace myvk {
 
         vkDestroySurfaceKHR(instance, surface_, nullptr);
         vkDestroyInstance(instance, nullptr);
+
+        // VMA DESTROY
+        vmaDestroyAllocator(allocator_);
     }
 
     void Device::createInstance() {
@@ -409,30 +413,42 @@ namespace myvk {
         VkBufferUsageFlags usage,
         VkMemoryPropertyFlags properties,
         VkBuffer& buffer,
-        VkDeviceMemory& bufferMemory) {
+        VmaAllocation& allocation,
+        VmaMemoryUsage memoryUsage)
+    {
         VkBufferCreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo.size = size;
         bufferInfo.usage = usage;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        if (vkCreateBuffer(device_, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create vertex buffer!");
+        VmaAllocationCreateInfo allocInfo{};
+        allocInfo.usage = memoryUsage;
+
+        if (vmaCreateBuffer(
+                allocator_,
+                &bufferInfo,
+                &allocInfo,
+                &buffer,
+                &allocation,
+                nullptr) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create buffer!");
         }
 
-        VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(device_, buffer, &memRequirements);
+        //VkMemoryRequirements memRequirements;
+        //vkGetBufferMemoryRequirements(device_, buffer, &memRequirements);
 
-        VkMemoryAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+        //VkMemoryAllocateInfo allocInfo{};
+        //allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        //allocInfo.allocationSize = memRequirements.size;
+        //allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 
-        if (vkAllocateMemory(device_, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-            throw std::runtime_error("failed to allocate vertex buffer memory!");
-        }
+        //if (vkAllocateMemory(device_, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+        //    throw std::runtime_error("failed to allocate vertex buffer memory!");
+        //}
 
-        vkBindBufferMemory(device_, buffer, bufferMemory, 0);
+        //vkBindBufferMemory(device_, buffer, bufferMemory, 0);
     }
 
     VkCommandBuffer Device::beginSingleTimeCommands() {
@@ -530,6 +546,22 @@ namespace myvk {
         if (vkBindImageMemory(device_, image, imageMemory, 0) != VK_SUCCESS) {
             throw std::runtime_error("failed to bind image memory!");
         }
+    }
+
+    void Device::createAllocator()
+    {
+        VmaAllocatorCreateInfo allocatorInfo = {};
+        allocatorInfo.physicalDevice = physicalDevice;
+        allocatorInfo.device = device_;
+        allocatorInfo.instance = instance;
+        allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_0; 
+
+        VmaAllocator allocator = VK_NULL_HANDLE;
+        VkResult vmaRes = vmaCreateAllocator(&allocatorInfo, &allocator);
+        if (vmaRes != VK_SUCCESS || allocator == VK_NULL_HANDLE) {
+            throw std::runtime_error("Failed to create VMA allocator");
+        }
+        allocator_ = allocator;
     }
 
 }  // namespace myvk

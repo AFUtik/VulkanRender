@@ -23,6 +23,7 @@ if (MSVC)
 endif()
 
 find_package(Vulkan REQUIRED)
+find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
@@ -34,5 +35,6 @@ target_link_libraries(${PROJECT_NAME}
 	GLEW::GLEW 
 	glm::glm
 	Vulkan::Vulkan
+	GPUOpen::VulkanMemoryAllocator
 	imgui::imgui
 	${Stb_INCLUDE_DIR})

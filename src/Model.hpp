@@ -1,6 +1,8 @@
 #pragma once
 
+#include "Buffer.hpp"
 #include "Device.hpp"
+#include "Texture.hpp"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -8,6 +10,7 @@
 #include <glm/ext.hpp>
 
 #include <vector>
+#include <memory>
 
 namespace myvk {
 	struct Transform {
@@ -65,8 +68,9 @@ namespace myvk {
 		Transform transform;
 
 		struct Vertex {
-			glm::vec3 position;
-			glm::vec3 color;
+			float x, y, z;
+			float u, v;
+			float r, g, b, s;
 
 			static std::vector<VkVertexInputBindingDescription> getBindingDescriptions();
 			static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
@@ -80,12 +84,14 @@ namespace myvk {
 
 		void bind(VkCommandBuffer commandBuffer);
 		void draw(VkCommandBuffer commandBuffer);
+
+		std::unique_ptr<Texture> texture;
 	private:
 		void createVertexBuffers(const std::vector<Vertex> &vertices);
 
 		Device& device;
-		VkBuffer vertexBuffer;
-		VkDeviceMemory vertexBufferMemory;
+		std::unique_ptr<Buffer> buffer;
+		
 		uint32_t vertexCount;
 	};
 }

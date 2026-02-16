@@ -7,11 +7,12 @@ namespace myvk {
 class Buffer {
 public:
     Buffer(
-        Device& device,
+        Device &device,
         VkDeviceSize instanceSize,
         uint32_t instanceCount,
         VkBufferUsageFlags usageFlags,
         VkMemoryPropertyFlags memoryPropertyFlags,
+        VmaMemoryUsage memoryUsage,
         VkDeviceSize minOffsetAlignment = 1);
     ~Buffer();
 
@@ -21,7 +22,7 @@ public:
     VkResult map(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
     void unmap();
 
-    void writeToBuffer(void* data, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+    void writeToBuffer(const void* data, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
     VkResult flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
     VkDescriptorBufferInfo descriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
     VkResult invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
@@ -45,7 +46,7 @@ private:
     Device& device;
     void* mapped = nullptr;
     VkBuffer buffer = VK_NULL_HANDLE;
-    VkDeviceMemory memory = VK_NULL_HANDLE;
+    VmaAllocation vmaAllocation; // VMA ALLOCATOR
 
     VkDeviceSize bufferSize;
     uint32_t instanceCount;

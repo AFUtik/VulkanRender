@@ -45,7 +45,8 @@ void Engine::run() {
 			sizeof(GlobalUbo),
 			1,
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 
+			VMA_MEMORY_USAGE_CPU_TO_GPU);
 		uboBuffers[i]->map();
 	}
 
@@ -143,11 +144,18 @@ void Engine::run() {
 	vkDeviceWaitIdle(device.device());
 }
 
+void Engine::createTexture(const char *pFilename, Texture *texture) {
+	
+}
+
 void Engine::loadModels() {
 	std::vector<Model::Vertex> vertices{
-		{{0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-		{{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-		{{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}}
+		{-1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+		{-1.0f, 1.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+		{1.0f, 1.0f, 0.0f,   1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+		{-1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+		{1.0f, 1.0f, 0.0f,   1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+		{1.0f, -1.0f, 0.0f,  1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f}
 	};
 
 	model = std::make_unique<Model>(device, vertices);

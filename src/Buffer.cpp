@@ -6,6 +6,7 @@
  */
 
 #include "Buffer.hpp"
+#include "Device.hpp"
 
 // std
 #include <cassert>
@@ -35,6 +36,7 @@ Buffer::Buffer(
     uint32_t instanceCount,
     VkBufferUsageFlags usageFlags,
     VkMemoryPropertyFlags memoryPropertyFlags,
+    VmaMemoryUsage memoryUsage,
     VkDeviceSize minOffsetAlignment)
     : device{device},
       instanceSize{instanceSize},
@@ -43,13 +45,15 @@ Buffer::Buffer(
       memoryPropertyFlags{memoryPropertyFlags} {
   alignmentSize = getAlignment(instanceSize, minOffsetAlignment);
   bufferSize = alignmentSize * instanceCount;
-  device.createBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer, memory);
+  device.createBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer, vmaAllocation, memoryUsage);
 }
 
 Buffer::~Buffer() {
   unmap();
-  vkDestroyBuffer(device.device(), buffer, nullptr);
-  vkFreeMemory(device.device(), memory, nullptr);
+  vmaDestroyBuffer(device.allocator(), buffer, vmaAllocation);
+
+  //vkDestroyBuffer(device.device(), buffer, nullptr);
+  //vkFreeMemory(device.device(), memory, nullptr);
 }
 
 /**
@@ -62,8 +66,8 @@ Buffer::~Buffer() {
  * @return VkResult of the buffer mapping call
  */
 VkResult Buffer::map(VkDeviceSize size, VkDeviceSize offset) {
-  assert(buffer && memory && "Called map on buffer before create");
-  return vkMapMemory(device.device(), memory, offset, size, 0, &mapped);
+  assert(buffer && vmaAllocation && "Called map on buffer before create");
+  return vmaMapMemory(device.allocator(), vmaAllocation, &mapped); //return vkMapMemory(device.device(), memory, offset, size, 0, &mapped);
 }
 
 /**
@@ -73,7 +77,7 @@ VkResult Buffer::map(VkDeviceSize size, VkDeviceSize offset) {
  */
 void Buffer::unmap() {
   if (mapped) {
-    vkUnmapMemory(device.device(), memory);
+    vmaUnmapMemory(device.allocator(), vmaAllocation); //vkUnmapMemory(device.device(), memory);
     mapped = nullptr;
   }
 }
@@ -87,7 +91,7 @@ void Buffer::unmap() {
  * @param offset (Optional) Byte offset from beginning of mapped region
  *
  */
-void Buffer::writeToBuffer(void *data, VkDeviceSize size, VkDeviceSize offset) {
+void Buffer::writeToBuffer(const void *data, VkDeviceSize size, VkDeviceSize offset) {
   assert(mapped && "Cannot copy to unmapped buffer");
 
   if (size == VK_WHOLE_SIZE) {
@@ -110,13 +114,14 @@ void Buffer::writeToBuffer(void *data, VkDeviceSize size, VkDeviceSize offset) {
  *
  * @return VkResult of the flush call
  */
-VkResult Buffer::flush(VkDeviceSize size, VkDeviceSize offset) {
-  VkMappedMemoryRange mappedRange = {};
-  mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-  mappedRange.memory = memory;
-  mappedRange.offset = offset;
-  mappedRange.size = size;
-  return vkFlushMappedMemoryRanges(device.device(), 1, &mappedRange);
+VkResult Buffer::flush(VkDeviceSize size, VkDeviceSize offset)
+{
+    return vmaFlushAllocation(
+        device.allocator(),
+        vmaAllocation,
+        offset,
+        size
+    );
 }
 
 /**
@@ -130,13 +135,14 @@ VkResult Buffer::flush(VkDeviceSize size, VkDeviceSize offset) {
  *
  * @return VkResult of the invalidate call
  */
-VkResult Buffer::invalidate(VkDeviceSize size, VkDeviceSize offset) {
-  VkMappedMemoryRange mappedRange = {};
-  mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-  mappedRange.memory = memory;
-  mappedRange.offset = offset;
-  mappedRange.size = size;
-  return vkInvalidateMappedMemoryRanges(device.device(), 1, &mappedRange);
+VkResult Buffer::invalidate(VkDeviceSize size, VkDeviceSize offset)
+{
+    return vmaInvalidateAllocation(
+        device.allocator(),
+        vmaAllocation,
+        offset,
+        size
+    );
 }
 
 /**
