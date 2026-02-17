@@ -3,11 +3,10 @@
 #include "Descriptors.hpp"
 #include "RenderSystem.hpp"
 #include "Swapchain.hpp"
+#include "Texture.hpp"
 #include "vulkan/vulkan_core.h"
 
 #include <memory>
-#include <stdexcept>
-#include <array>
 #include <thread>
 
 #define GLM_FORCE_RADIANS
@@ -15,6 +14,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+#include <stb_image.h>
 
 using namespace myvk;
 
@@ -91,7 +92,10 @@ void Engine::run() {
 			if (Events::pressed(GLFW_KEY_A)) {
 				camera.translate(-camera.xdir() * H * speed);
 			}
-			if (Events::jpressed(GLFW_KEY_G)) {
+			if (Events::pressed(GLFW_KEY_TAB)) {
+				Events::toggle_cursor(&window);
+			}
+			if (Events::pressed(GLFW_KEY_G)) {
 				model->transform.rotateLocal(0.05, { 1.0, 0.0f, 0.0f });
 			}
 			if (Events::_cursor_locked) {
@@ -144,19 +148,17 @@ void Engine::run() {
 	vkDeviceWaitIdle(device.device());
 }
 
-void Engine::createTexture(const char *pFilename, Texture *texture) {
-	
-}
-
 void Engine::loadModels() {
 	std::vector<Model::Vertex> vertices{
-		{-1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-		{-1.0f, 1.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-		{1.0f, 1.0f, 0.0f,   1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-		{-1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-		{1.0f, 1.0f, 0.0f,   1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-		{1.0f, -1.0f, 0.0f,  1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f}
+		{-1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f},
+		{-1.0f, 1.0f, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f},
+		{1.0f, 1.0f, 0.0f,   1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f},
+		{1.0f, -1.0f, 0.0f,  1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f}
 	};
-
-	model = std::make_unique<Model>(device, vertices);
+	std::vector<uint32_t> indices{
+		0, 1, 2,
+    	2, 3, 0
+	};
+	model = std::make_unique<Model>(device, vertices, indices);
+	model->texture = std::make_unique<Texture>(device, "C:/cplusplus/VulkanRender/VulkanRender/resources/img/green.png");
 }

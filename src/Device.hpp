@@ -68,7 +68,7 @@ namespace myvk {
             const VkImageCreateInfo& imageInfo,
             VkMemoryPropertyFlags properties,
             VkImage& image,
-            VkDeviceMemory& imageMemory);
+            VmaAllocation& allocation);
         VkPhysicalDeviceProperties properties;
     private:
         void createInstance();

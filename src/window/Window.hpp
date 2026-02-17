@@ -1,5 +1,4 @@
-#ifndef WINDOW_WINDOW_HPP_
-#define WINDOW_WINDOW_HPP_
+#pragma once
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -36,6 +35,3 @@ namespace myvk {
 		bool frameBufferResized = false;
 	};
 }
-
-
-#endif

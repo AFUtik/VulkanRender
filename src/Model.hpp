@@ -76,7 +76,7 @@ namespace myvk {
 			static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
 		};
 
-		Model(Device& device, const std::vector<Vertex>& vertices);
+		Model(Device& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
 		~Model();
 
 		Model(const Model&) = delete;
@@ -88,10 +88,15 @@ namespace myvk {
 		std::unique_ptr<Texture> texture;
 	private:
 		void createVertexBuffers(const std::vector<Vertex> &vertices);
+		void createIndexBuffers(const std::vector<uint32_t> &indices);
 
 		Device& device;
-		std::unique_ptr<Buffer> buffer;
+		std::unique_ptr<Buffer> vertexBuffer;
+		std::unique_ptr<Buffer> indexBuffer;
+
+		bool hasIndexBuffer = false;
 		
 		uint32_t vertexCount;
+		uint32_t indexCount;
 	};
 }

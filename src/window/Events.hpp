@@ -1,5 +1,4 @@
-#ifndef WINDOW_EVENTS_HPP_
-#define EVENTS_EVENTS_HPP_
+#pragma once
 
 #include "Window.hpp"
 
@@ -28,5 +27,3 @@ public:
 
 	static void toggle_cursor(myvk::Window* window);
 };
-
-#endif /* WINDOW_EVENTS_H_ */

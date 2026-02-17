@@ -433,7 +433,7 @@ namespace myvk {
                 &allocation,
                 nullptr) != VK_SUCCESS)
         {
-            throw std::runtime_error("failed to create buffer!");
+            throw std::runtime_error("failed to create buffer with VMA!");
         }
 
         //VkMemoryRequirements memRequirements;
@@ -526,26 +526,42 @@ namespace myvk {
         const VkImageCreateInfo& imageInfo,
         VkMemoryPropertyFlags properties,
         VkImage& image,
-        VkDeviceMemory& imageMemory) {
-        if (vkCreateImage(device_, &imageInfo, nullptr, &image) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create image!");
+        VmaAllocation& allocation) 
+    {
+        VmaAllocationCreateInfo allocInfo{};
+        allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+        allocInfo.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+
+        if (vmaCreateImage(
+            allocator_,
+            &imageInfo,
+            &allocInfo,
+            &image,
+            &allocation,
+            nullptr))
+        {
+            throw std::runtime_error("failed to create image with VMA!");
         }
 
-        VkMemoryRequirements memRequirements;
-        vkGetImageMemoryRequirements(device_, image, &memRequirements);
+        //if (vkCreateImage(device_, &imageInfo, nullptr, &image) != VK_SUCCESS) {
+        //    throw std::runtime_error("failed to create image!");
+        //}
 
-        VkMemoryAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+        //VkMemoryRequirements memRequirements;
+        //vkGetImageMemoryRequirements(device_, image, &memRequirements);
 
-        if (vkAllocateMemory(device_, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
-            throw std::runtime_error("failed to allocate image memory!");
-        }
+        //VkMemoryAllocateInfo allocInfo{};
+        //allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        //allocInfo.allocationSize = memRequirements.size;
+        //allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 
-        if (vkBindImageMemory(device_, image, imageMemory, 0) != VK_SUCCESS) {
-            throw std::runtime_error("failed to bind image memory!");
-        }
+        //if (vkAllocateMemory(device_, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+        //    throw std::runtime_error("failed to allocate image memory!");
+        //}
+
+        //if (vkBindImageMemory(device_, image, imageMemory, 0) != VK_SUCCESS) {
+        //    throw std::runtime_error("failed to bind image memory!");
+        //}
     }
 
     void Device::createAllocator()

@@ -1,26 +1,45 @@
 #pragma once
 
 #include "Device.hpp"
+
+#include <vma/vk_mem_alloc.h>
 #include <string>
 
 namespace myvk {
     class Texture {
     public:
-        //Texture(Device &device, const std::string &path);
-        //~Texture();
+        Texture(Device& device, const char* pFilename);
+        ~Texture();
 
         Texture(const Texture&) = delete;
 		Texture& operator=(const Texture&) = delete;
+
     private:
-        //void createImageTexture(const std::string &path);
-        //void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties);
-        //void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+        void imageMemBarrier(VkCommandBuffer CmdBuf, VkImageLayout OldLayout, VkImageLayout NewLayout, int layerCount);
+        
+        void transitionImageLayout(VkImageLayout OldLayout, VkImageLayout NewLayout, int LayerCount);
 
-        Device &device;
+		void updateTextureImage(int layerCount, const void* pPixels);
 
+		void createImageView(VkImageAspectFlags AspectFlags);
+
+		void createTextureSampler(VkFilter MinFilter, VkFilter MaxFilter, VkSamplerAddressMode AddressMode);
+
+		void createImage();
+
+        void createTextureFromData(const void* pPixels);
+
+		void createTexture(const char *pFilename);
+
+        bool isCubemap = false;
+        int imageWidth, imageHeight, imageChannels;
+
+        VkFormat format;
         VkImage image;
-        VkDeviceMemory imageMemory;
+        VmaAllocation vmaAllocation;
         VkImageView view;
         VkSampler sampler;
+        VkImageLayout imageLayout;
+        Device& device;
     };
 }

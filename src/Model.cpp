@@ -4,8 +4,9 @@
 #include <cstring>
 
 namespace myvk {
-	Model::Model(Device& device, const std::vector<Vertex>& vertices) : device(device) {
+	Model::Model(Device& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices) : device(device) {
 		createVertexBuffers(vertices);
+		createIndexBuffers(indices);
 	}
 
 	Model::~Model() {}
@@ -15,26 +16,74 @@ namespace myvk {
 		assert(vertexCount >= 3 && "Vertex count must be at least 3");
 
 		VkDeviceSize bufferSize = sizeof(vertices[0]) * vertexCount;
-		buffer = std::make_unique<Buffer>(
-			device, 
-			bufferSize, 
+		Buffer stagingBuffer(
+			device,
+			bufferSize,
 			1,
-			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			VMA_MEMORY_USAGE_CPU_TO_GPU
+			VMA_MEMORY_USAGE_CPU_ONLY
 		);
-		buffer->map();
-		buffer->writeToBuffer(vertices.data(), bufferSize, 0);
+		stagingBuffer.map();
+		stagingBuffer.writeToBuffer(vertices.data(), bufferSize);
+		stagingBuffer.unmap();
+
+		vertexBuffer = std::make_unique<Buffer>(
+			device,
+			bufferSize,
+			1,
+			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+			0,
+			VMA_MEMORY_USAGE_GPU_ONLY
+		);
+		device.copyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(), bufferSize);
+	}
+
+	void Model::createIndexBuffers(const std::vector<uint32_t>& indices) {
+		indexCount = static_cast<uint32_t>(indices.size());
+		hasIndexBuffer = indexCount > 0;
+
+		if (!hasIndexBuffer) {
+			return;
+		}
+
+		VkDeviceSize bufferSize = sizeof(indices[0]) * indexCount;
+		Buffer stagingBuffer(
+			device,
+			bufferSize,
+			1,
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			VMA_MEMORY_USAGE_CPU_ONLY
+		);
+		stagingBuffer.map();
+		stagingBuffer.writeToBuffer(indices.data(), bufferSize);
+		stagingBuffer.unmap();
+
+		indexBuffer = std::make_unique<Buffer>(
+			device,
+			bufferSize,
+			1,
+			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+			0,
+			VMA_MEMORY_USAGE_GPU_ONLY
+		);
+		device.copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
 	}
 
 	void Model::bind(VkCommandBuffer commandBuffer) {
-		VkBuffer buffers[] = { buffer->getBuffer() };
+		VkBuffer buffers[] = { vertexBuffer->getBuffer() };
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
+		if (hasIndexBuffer) vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
 	}
 
 	void Model::draw(VkCommandBuffer commandBuffer) {
-		vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
+		if (hasIndexBuffer) {
+			vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
+		} else {
+			vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
+		}
 	}
 
 	std::vector<VkVertexInputBindingDescription> Model::Vertex::getBindingDescriptions() {
