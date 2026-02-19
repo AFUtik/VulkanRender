@@ -10,8 +10,8 @@
 
 using namespace myvk;
 
-RenderSystem::RenderSystem(Device &device, VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout) : device(device) {
-	createPipelineLayout(globalSetLayout);
+RenderSystem::RenderSystem(Device &device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts) : device(device) {
+	createPipelineLayout(layouts);
 	createPipeline(renderPass);
 }
 
@@ -19,18 +19,16 @@ RenderSystem::~RenderSystem() {
 	vkDestroyPipelineLayout(device.device(), pipelineLayout, nullptr);
 }
 
-void RenderSystem::createPipelineLayout(VkDescriptorSetLayout globalSetLayout) {
+void RenderSystem::createPipelineLayout(const std::vector<VkDescriptorSetLayout>& layouts) {
 	VkPushConstantRange pushConstantRange{};
 	pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 	pushConstantRange.offset = 0;
 	pushConstantRange.size = sizeof(PushConstantData);
 
-	std::vector<VkDescriptorSetLayout> descriptorSetLayouts{globalSetLayout};
-
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
-	pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
+	pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layouts.size());
+	pipelineLayoutInfo.pSetLayouts = layouts.data();
 	pipelineLayoutInfo.pushConstantRangeCount = 1;
 	pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 	if (vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr, &pipelineLayout) !=
@@ -62,9 +60,10 @@ void RenderSystem::render(FrameInfo& frame, Model* model) {
 		0,
 		1,
 		&frame.globalDescriptorSet,
-		0,
-		nullptr);
-	
+		0, nullptr
+	);
+	model->material->bind(frame.commandBuffer, pipelineLayout, frame.frameIndex);
+
 	PushConstantData push;
 	push.model = model->transform.model();
 	vkCmdPushConstants(
@@ -74,6 +73,9 @@ void RenderSystem::render(FrameInfo& frame, Model* model) {
 		0,
 		sizeof(PushConstantData),
 		&push);
+	
+	
+
 	model->bind(frame.commandBuffer);
 	model->draw(frame.commandBuffer);
 }

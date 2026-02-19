@@ -2,7 +2,7 @@
 
 #include "Buffer.hpp"
 #include "Device.hpp"
-#include "Texture.hpp"
+#include "Material.hpp"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -84,8 +84,8 @@ namespace myvk {
 
 		void bind(VkCommandBuffer commandBuffer);
 		void draw(VkCommandBuffer commandBuffer);
-
-		std::unique_ptr<Texture> texture;
+		
+		std::shared_ptr<Material> material;
 	private:
 		void createVertexBuffers(const std::vector<Vertex> &vertices);
 		void createIndexBuffers(const std::vector<uint32_t> &indices);
@@ -93,7 +93,7 @@ namespace myvk {
 		Device& device;
 		std::unique_ptr<Buffer> vertexBuffer;
 		std::unique_ptr<Buffer> indexBuffer;
-
+		
 		bool hasIndexBuffer = false;
 		
 		uint32_t vertexCount;

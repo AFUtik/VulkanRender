@@ -27,9 +27,9 @@ Engine::Engine() : camera(window.width, window.height, glm::dvec3(0, 0, 0), glm:
 	Events::init(window.window);
 
 	globalPool = DescriptorPool::Builder(device)
-		.setMaxSets(SwapChain::MAX_FRAMES_IN_FLIGHT)
+		.setMaxSets(64)
 		.addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, SwapChain::MAX_FRAMES_IN_FLIGHT)
-		.addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, SwapChain::MAX_FRAMES_IN_FLIGHT)
+		.addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 62)
 		.build();
 
 	loadModels();
@@ -54,26 +54,34 @@ void Engine::run() {
 
 	auto globalSetLayout = DescriptorSetLayout::Builder(device)
 		.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-		.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.build();
 
-	VkDescriptorImageInfo imageInfo;
-	if(model->texture) {
-		imageInfo.sampler = model->texture->getSampler();
-		imageInfo.imageView = model->texture->getView();
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	}
+	auto materialSetLayout = DescriptorSetLayout::Builder(device)
+		.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.build();
+
+	//VkDescriptorImageInfo imageInfo;
+	//if(model->texture) {
+	//	imageInfo.sampler = model->texture->getSampler();
+	//	imageInfo.imageView = model->texture->getView();
+	//	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	//}
 
 	std::vector<VkDescriptorSet> globalDescriptorSets(SwapChain::MAX_FRAMES_IN_FLIGHT);
 	for(int i = 0; i < globalDescriptorSets.size(); i++) {
 		auto bufferInfo = uboBuffers[i]->descriptorInfo();
 		DescriptorWriter(*globalSetLayout, *globalPool)
 			.writeBuffer(0, &bufferInfo)
-			.writeImage (1, &imageInfo)
 			.build(globalDescriptorSets[i]);
 	}
 
-	RenderSystem renderSystem(device, renderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout());
+	auto texture  = std::make_shared<Texture>(device, "C:/cplusplus/VulkanRender/VulkanRender/resources/img/green.png");
+	model->material = std::make_shared<Material>(*globalPool, *materialSetLayout, texture);
+
+	RenderSystem renderSystem(device, renderer.getSwapChainRenderPass(), {
+		globalSetLayout->getDescriptorSetLayout(), 
+		materialSetLayout->getDescriptorSetLayout()
+	});
 
 	Events::toggle_cursor(&window);
 	double lastTime = glfwGetTime();
@@ -170,5 +178,4 @@ void Engine::loadModels() {
     	2, 3, 0
 	};
 	model = std::make_unique<Model>(device, vertices, indices);
-	model->texture = std::make_unique<Texture>(device, "C:/cplusplus/VulkanRender/VulkanRender/resources/img/green.png");
 }
