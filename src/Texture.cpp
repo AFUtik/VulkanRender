@@ -206,17 +206,17 @@ void Texture::imageMemBarrier(VkCommandBuffer CmdBuf, VkImageLayout OldLayout, V
 		                 0, 0, NULL, 0, NULL, 1, &Barrier);
 }
 
-void Texture::transitionImageLayout(VkImageLayout OldLayout, VkImageLayout NewLayout, int layerCount)
+void Texture::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout, int layerCount)
 {
     VkCommandBuffer m_copyCmdBuf = device.beginSingleTimeCommands();
 
-	imageMemBarrier(m_copyCmdBuf, image, format, OldLayout, NewLayout, layerCount);
+	imageMemBarrier(m_copyCmdBuf, oldLayout, newLayout, layerCount);
 
 	device.endSingleTimeCommands(m_copyCmdBuf);
 }
 
 void Texture::createTexture(const char *pFilename) {
-	stbi_set_flip_vertically_on_load(1);
+	//stbi_set_flip_vertically_on_load(1);
 
 	stbi_uc* pPixels = stbi_load(pFilename, &imageWidth, &imageHeight, &imageChannels, STBI_rgb_alpha);
 

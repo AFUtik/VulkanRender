@@ -18,8 +18,8 @@
 namespace myvk {
 	class Engine {
 	public:
-		static constexpr int WIDTH = 1920;
-		static constexpr int HEIGHT = 1080;
+		static constexpr int WIDTH = 1920/1.3f;
+		static constexpr int HEIGHT = 1080/1.3f;
 
 		Engine();
 		~Engine();

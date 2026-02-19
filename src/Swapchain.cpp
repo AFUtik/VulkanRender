@@ -1,4 +1,5 @@
 #include "Swapchain.hpp"
+#include "Device.hpp"
 
 // std
 #include <array>
@@ -46,8 +47,7 @@ namespace myvk {
 
         for (int i = 0; i < depthImages.size(); i++) {
             vkDestroyImageView(device.device(), depthImageViews[i], nullptr);
-            vkDestroyImage(device.device(), depthImages[i], nullptr);
-            vkFreeMemory(device.device(), depthImageMemorys[i], nullptr);
+            vmaDestroyImage(device.allocator(), depthImages[i], depthImageAllocs[i]);
         }
 
         for (auto framebuffer : swapChainFramebuffers) {
@@ -292,10 +292,11 @@ namespace myvk {
     void SwapChain::createDepthResources() {
         VkFormat depthFormat = findDepthFormat();
         swapChainDepthFormat = depthFormat;
+
         VkExtent2D swapChainExtent = getSwapChainExtent();
 
         depthImages.resize(imageCount());
-        depthImageMemorys.resize(imageCount());
+        depthImageAllocs.resize(imageCount());
         depthImageViews.resize(imageCount());
 
         for (int i = 0; i < depthImages.size(); i++) {
@@ -319,7 +320,7 @@ namespace myvk {
                 imageInfo,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                 depthImages[i],
-                depthImageMemorys[i]);
+                depthImageAllocs[i]);
 
             VkImageViewCreateInfo viewInfo{};
             viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

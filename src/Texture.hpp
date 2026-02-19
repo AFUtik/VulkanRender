@@ -14,6 +14,8 @@ namespace myvk {
         Texture(const Texture&) = delete;
 		Texture& operator=(const Texture&) = delete;
 
+        VkSampler getSampler() {return sampler;}
+        VkImageView getView() {return view;}
     private:
         void imageMemBarrier(VkCommandBuffer CmdBuf, VkImageLayout OldLayout, VkImageLayout NewLayout, int layerCount);
         
