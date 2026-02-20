@@ -150,7 +150,7 @@ void Engine::run() {
 				uboBuffers[frameIndex]->writeToBuffer(&ubo);
 				uboBuffers[frameIndex]->flush();
 
-				renderSystem.render(frameInfo, model.get());
+				renderSystem.render(frameInfo);
 
 				renderer.endSwapChainRenderPass(commandBuffer);
 				renderer.endFrame();

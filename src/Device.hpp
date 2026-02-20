@@ -5,8 +5,40 @@
 
 #include <string>
 #include <vector>
+#include <deque>
+#include <functional>
+#include <mutex>
 
 namespace myvk {
+    struct DeletionQueue
+    {
+        std::deque<std::function<void()>> deletors;
+        //std::mutex mtx;
+
+		DeletionQueue() = default;
+		~DeletionQueue() {flush();}
+
+		DeletionQueue(const DeletionQueue&) = delete;
+    	DeletionQueue& operator=(const DeletionQueue&) = delete;
+
+		DeletionQueue(DeletionQueue&&) noexcept = default;
+		DeletionQueue& operator=(DeletionQueue&&) noexcept = default;
+
+
+        void push_function(std::function<void()>&& function) {
+            deletors.push_back(function);
+        }
+
+        void flush() {
+            // reverse iterate the deletion queue to execute all the functions
+            for (auto it = deletors.rbegin(); it != deletors.rend(); it++) {
+                (*it)(); //call the function
+            }
+
+            deletors.clear();
+        }
+    };
+
     struct SwapChainSupportDetails {
         VkSurfaceCapabilitiesKHR capabilities;
         std::vector<VkSurfaceFormatKHR> formats;
@@ -23,6 +55,17 @@ namespace myvk {
 
     class Device {
     public:
+        using DeletionQueueProvider = std::function<DeletionQueue&()>;
+
+        void setDeletionQueueProvider(DeletionQueueProvider provider) {
+            deletionQueueProvider = provider;
+        }
+
+        DeletionQueue& getDeletionQueue() {
+            //assert(deletionQueueProvider);
+            return deletionQueueProvider();
+        }
+
         #ifdef NDEBUG
                 const bool enableValidationLayers = false;
         #else
@@ -69,6 +112,7 @@ namespace myvk {
             VkMemoryPropertyFlags properties,
             VkImage& image,
             VmaAllocation& allocation);
+
         VkPhysicalDeviceProperties properties;
     private:
         void createInstance();
@@ -100,6 +144,8 @@ namespace myvk {
         VkQueue graphicsQueue_;
         VkQueue presentQueue_;
         VmaAllocator allocator_;
+
+        DeletionQueueProvider deletionQueueProvider;
 
         const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
         const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };

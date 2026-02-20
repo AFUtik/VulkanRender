@@ -42,7 +42,8 @@ Buffer::Buffer(
       instanceSize{instanceSize},
       instanceCount{instanceCount},
       usageFlags{usageFlags},
-      memoryPropertyFlags{memoryPropertyFlags} {
+      memoryPropertyFlags{memoryPropertyFlags} 
+{
   alignmentSize = getAlignment(instanceSize, minOffsetAlignment);
   bufferSize = alignmentSize * instanceCount;
   device.createBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer, vmaAllocation, memoryUsage);
@@ -50,8 +51,13 @@ Buffer::Buffer(
 
 Buffer::~Buffer() {
   unmap();
-  vmaDestroyBuffer(device.allocator(), buffer, vmaAllocation);
 
+  if(buffer == VK_NULL_HANDLE) return;
+  device.getDeletionQueue().push_function(
+    [this]() {
+      vmaDestroyBuffer(device.allocator(), buffer, vmaAllocation);
+    }
+  );
   //vkDestroyBuffer(device.device(), buffer, nullptr);
   //vkFreeMemory(device.device(), memory, nullptr);
 }

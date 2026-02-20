@@ -26,4 +26,6 @@ private:
     std::shared_ptr<Texture> albedo;
 };
 
+using MaterialPtr = std::shared_ptr<Material>;
+
 }

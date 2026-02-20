@@ -7,8 +7,9 @@
 #include "Camera.hpp"
 
 #include <memory>
+#include <unordered_map>
 #include <vector>
-#include <map>
+#include <unordered_map>
 
 const std::string absolutePath = "C:\\cplusplus\\VulkanRender\\VulkanRender\\";
 
@@ -25,15 +26,15 @@ namespace myvk {
 		RenderSystem(const RenderSystem&) = delete;
 		RenderSystem& operator=(const RenderSystem&) = delete;
 
-		void render(FrameInfo& frame, Model *model);
-		//void addModel(Model* model);
+		void create(std::shared_ptr<Model> model);
+		void render(FrameInfo& frame);
 	private:
 		void createPipelineLayout(const std::vector<VkDescriptorSetLayout>& layouts);
 		void createPipeline(VkRenderPass renderPass);
 
-		Device& device;
+		std::unordered_map<Model*, std::shared_ptr<Model>> models;
 
-		//std::vector<Model*> models;
+		Device& device;
 
 		std::unique_ptr<Pipeline> pipeline;
 		VkPipelineLayout pipelineLayout;

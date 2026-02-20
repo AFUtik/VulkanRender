@@ -51,9 +51,11 @@ Texture::Texture(Device& device, const char* pFilename) : device(device) {
 }
 
 Texture::~Texture() {
-    vkDestroySampler(device.device(), sampler, nullptr);
-    vkDestroyImageView(device.device(), view, nullptr);
-    vmaDestroyImage(device.allocator(), image, vmaAllocation);
+	device.getDeletionQueue().push_function([this]() {
+		vkDestroySampler(device.device(), sampler, nullptr);
+    	vkDestroyImageView(device.device(), view, nullptr);
+    	vmaDestroyImage(device.allocator(), image, vmaAllocation);
+	});
 }
 
 // Copied from the "3D Graphics Rendering Cookbook"

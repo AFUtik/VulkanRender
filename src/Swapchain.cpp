@@ -32,6 +32,11 @@ namespace myvk {
         createDepthResources();
         createFramebuffers();
         createSyncObjects();
+
+        delQueues.resize(SwapChain::MAX_FRAMES_IN_FLIGHT);
+        device.setDeletionQueueProvider([this]() -> DeletionQueue& {
+            return delQueues[currentFrame];
+        });
     }
 
     SwapChain::~SwapChain() {
@@ -66,6 +71,7 @@ namespace myvk {
 
     VkResult SwapChain::acquireNextImage(uint32_t* imageIndex) {
         vkWaitForFences(device.device(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+        delQueues[currentFrame].flush();
         VkResult result = vkAcquireNextImageKHR(
             device.device(),
             swapChain,
@@ -74,14 +80,15 @@ namespace myvk {
             VK_NULL_HANDLE,
             imageIndex
         );
-        if (imagesInFlight[*imageIndex] != VK_NULL_HANDLE) {
-            vkWaitForFences(device.device(), 1, &imagesInFlight[*imageIndex], VK_TRUE, UINT64_MAX);
-        }
-        imagesInFlight[*imageIndex] = inFlightFences[currentFrame];
         return result;
     }
 
     VkResult SwapChain::submitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex) {
+        if (imagesInFlight[*imageIndex] != VK_NULL_HANDLE) {
+            vkWaitForFences(device.device(), 1, &imagesInFlight[*imageIndex], VK_TRUE, UINT64_MAX);
+        }
+        imagesInFlight[*imageIndex] = inFlightFences[currentFrame];
+
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -113,7 +120,6 @@ namespace myvk {
         VkSwapchainKHR swapChains[] = { swapChain };
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
-
         presentInfo.pImageIndices = imageIndex;
 
         VkResult result = vkQueuePresentKHR(device.presentQueue(), &presentInfo);

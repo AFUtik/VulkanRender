@@ -1,13 +1,13 @@
 #pragma once
 
 #include "Device.hpp"
+#include "Renderer.hpp"
 
 #include <string>
 #include <vector>
 #include <memory>
 
 namespace myvk {
-
     class SwapChain {
     public:
         static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
@@ -83,6 +83,6 @@ namespace myvk {
         std::vector<VkFence> inFlightFences;
         std::vector<VkFence> imagesInFlight;
         size_t currentFrame = 0;
+        std::vector<DeletionQueue> delQueues;
     };
-
 }  // namespace lve

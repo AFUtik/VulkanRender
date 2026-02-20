@@ -11,6 +11,7 @@ Renderer::Renderer(Window& window, Device& device) : window(window), device(devi
 }
 
 Renderer::~Renderer() {
+
 	freeCommandBuffers();
 }
 

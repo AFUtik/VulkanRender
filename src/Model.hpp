@@ -3,6 +3,7 @@
 #include "Buffer.hpp"
 #include "Device.hpp"
 #include "Material.hpp"
+#include "RenderSystem.hpp"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -62,41 +63,52 @@ namespace myvk {
 			return mat;
 		}
 	};
+	struct Vertex {
+		float x, y, z;
+		float u, v;
+		float r, g, b, s;
+
+		static std::vector<VkVertexInputBindingDescription> getBindingDescriptions();
+		static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+	};
+
+	struct Mesh {
+	public:
+		std::vector<Vertex> vertices;
+		std::vector<uint32_t> indices;
+		bool freeDataOnUpload = false;
+
+		Mesh();
+		~Mesh();
+
+		Mesh(const Mesh&) = delete;
+		Mesh& operator=(const Mesh&) = delete;
+	private:
+		std::unique_ptr<Buffer> vertexBuffer;
+		std::unique_ptr<Buffer> indexBuffer;
+		bool uploaded = false;
+		bool hasIndexBuffer = false;
+		uint32_t vertexCount;
+		uint32_t indexCount;
+		
+		void createBuffers(Device& device);
+		void bind(VkCommandBuffer commandBuffer);
+
+		friend class RenderSystem;
+	};
+
+	using MeshPtr = std::shared_ptr<Mesh>;
 
 	class Model {
 	public:
 		Transform transform;
-
-		struct Vertex {
-			float x, y, z;
-			float u, v;
-			float r, g, b, s;
-
-			static std::vector<VkVertexInputBindingDescription> getBindingDescriptions();
-			static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
-		};
-
-		Model(Device& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
+		MaterialPtr material;
+		MeshPtr mesh;
+		
+		Model();
 		~Model();
 
 		Model(const Model&) = delete;
 		Model& operator=(const Model&) = delete;
-
-		void bind(VkCommandBuffer commandBuffer);
-		void draw(VkCommandBuffer commandBuffer);
-		
-		std::shared_ptr<Material> material;
-	private:
-		void createVertexBuffers(const std::vector<Vertex> &vertices);
-		void createIndexBuffers(const std::vector<uint32_t> &indices);
-
-		Device& device;
-		std::unique_ptr<Buffer> vertexBuffer;
-		std::unique_ptr<Buffer> indexBuffer;
-		
-		bool hasIndexBuffer = false;
-		
-		uint32_t vertexCount;
-		uint32_t indexCount;
 	};
 }

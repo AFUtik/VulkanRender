@@ -1,6 +1,7 @@
 #include "RenderSystem.hpp"
 #include "vulkan/vulkan_core.h"
 
+#include <functional>
 #include <stdexcept>
 #include <array>
 
@@ -51,7 +52,13 @@ void RenderSystem::createPipeline(VkRenderPass renderPass) {
 		pipelineConfig);
 }
 
-void RenderSystem::render(FrameInfo& frame, Model* model) {
+void RenderSystem::create(std::shared_ptr<Model> model) {
+	if(model->mesh) model->mesh->createBuffers(device);
+	
+	models.emplace(model.get(), model);
+}
+
+void RenderSystem::render(FrameInfo& frame) {
 	pipeline->bind(frame.commandBuffer);
 	vkCmdBindDescriptorSets(
 		frame.commandBuffer,
@@ -62,20 +69,18 @@ void RenderSystem::render(FrameInfo& frame, Model* model) {
 		&frame.globalDescriptorSet,
 		0, nullptr
 	);
-	model->material->bind(frame.commandBuffer, pipelineLayout, frame.frameIndex);
 
-	PushConstantData push;
-	push.model = model->transform.model();
-	vkCmdPushConstants(
-		frame.commandBuffer,
-		pipelineLayout,
-		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-		0,
-		sizeof(PushConstantData),
-		&push);
-	
-	
+	//model->material->bind(frame.commandBuffer, pipelineLayout, frame.frameIndex);
 
-	model->bind(frame.commandBuffer);
-	model->draw(frame.commandBuffer);
+	//PushConstantData push;
+	//push.model = model->transform.model();
+	//vkCmdPushConstants(
+	//	frame.commandBuffer,
+	//	pipelineLayout,
+	//	VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+	//	0,
+	//	sizeof(PushConstantData),
+	//	&push);
+	//model->bind(frame.commandBuffer);
+	//model->draw(frame.commandBuffer);
 }

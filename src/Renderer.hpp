@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Device.hpp"
 #include "window/Window.hpp"
 #include "Pipeline.hpp"
 #include "Swapchain.hpp"

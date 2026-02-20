@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Device.hpp"
+#include "Swapchain.hpp"
 
 namespace myvk {
 
