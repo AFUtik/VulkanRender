@@ -71,6 +71,7 @@ namespace myvk {
         #else
                 const bool enableValidationLayers = true;
         #endif
+        
         Device(Window& window);
         ~Device();
 

@@ -1,17 +1,17 @@
-#include "Material.hpp"
+#include "GPUMaterial.hpp"
 
 namespace myvk {
 
-Material::Material(DescriptorPool& pool,
+GPUMaterial::GPUMaterial(DescriptorPool& pool,
                    DescriptorSetLayout& layout,
-                   std::shared_ptr<Texture> albedo) : albedo(albedo)
+                   std::shared_ptr<GPUTexture> albedo) : albedo(albedo)
 {
    create(pool, layout, albedo);
 }
 
-void Material::create(DescriptorPool& pool,
+void GPUMaterial::create(DescriptorPool& pool,
                 DescriptorSetLayout& layout,
-                std::shared_ptr<Texture> albedo) 
+                std::shared_ptr<GPUTexture> albedo) 
 {
     VkDescriptorImageInfo imageInfo;
 	if(albedo) {
@@ -28,7 +28,7 @@ void Material::create(DescriptorPool& pool,
 	}
 }
 
-void Material::bind(VkCommandBuffer commandBuffer, VkPipelineLayout& pipelineLayout, int frame) {
+void GPUMaterial::bind(VkCommandBuffer commandBuffer, VkPipelineLayout& pipelineLayout, int frame) const {
     vkCmdBindDescriptorSets(
         commandBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,

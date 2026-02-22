@@ -1,14 +1,13 @@
 #pragma once
 
-#include "Buffer.hpp"
-#include "Device.hpp"
-#include "Material.hpp"
-#include "RenderSystem.hpp"
 
+#include <cstdint>
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
+
+#include "GPUResources.hpp"
 
 #include <vector>
 #include <memory>
@@ -63,49 +62,14 @@ namespace myvk {
 			return mat;
 		}
 	};
-	struct Vertex {
-		float x, y, z;
-		float u, v;
-		float r, g, b, s;
-
-		static std::vector<VkVertexInputBindingDescription> getBindingDescriptions();
-		static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
-	};
-
-	struct Mesh {
-	public:
-		std::vector<Vertex> vertices;
-		std::vector<uint32_t> indices;
-		bool freeDataOnUpload = false;
-
-		Mesh();
-		~Mesh();
-
-		Mesh(const Mesh&) = delete;
-		Mesh& operator=(const Mesh&) = delete;
-	private:
-		std::unique_ptr<Buffer> vertexBuffer;
-		std::unique_ptr<Buffer> indexBuffer;
-		bool uploaded = false;
-		bool hasIndexBuffer = false;
-		uint32_t vertexCount;
-		uint32_t indexCount;
-		
-		void createBuffers(Device& device);
-		void bind(VkCommandBuffer commandBuffer);
-
-		friend class RenderSystem;
-	};
-
-	using MeshPtr = std::shared_ptr<Mesh>;
 
 	class Model {
 	public:
 		Transform transform;
-		MaterialPtr material;
-		MeshPtr mesh;
-		
-		Model();
+		ResourceHandle material;
+		ResourceHandle mesh;
+
+		Model(ResourceHandle meshHandle = UINT32_MAX, ResourceHandle materialHandle = UINT32_MAX);
 		~Model();
 
 		Model(const Model&) = delete;

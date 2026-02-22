@@ -4,7 +4,6 @@
 #include "window/Window.hpp"
 #include "Pipeline.hpp"
 #include "Swapchain.hpp"
-#include "Model.hpp"
 
 #include <memory>
 #include <vector>

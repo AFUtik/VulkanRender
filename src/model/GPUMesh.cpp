@@ -1,14 +1,14 @@
-#include "Model.hpp"
-#include "Device.hpp"
-
-#include <cassert>
-#include <cstring>
+#include "GPUMesh.hpp"
 
 namespace myvk {
-	void Mesh::createBuffers(Device& device) {
-		vertexCount = static_cast<uint32_t>(vertices.size());
+	GPUMesh::GPUMesh(Device& device, std::shared_ptr<MeshInstance> instance) : device(device), instance(instance) {
+		createBuffers(device);
+	}
+
+    void GPUMesh::createBuffers(Device& device) {
+		vertexCount = static_cast<uint32_t>(instance->vertices.size());
 		if(vertexCount >= 3) {
-			VkDeviceSize bufferSize = sizeof(vertices[0]) * vertexCount;
+			VkDeviceSize bufferSize = sizeof(instance->vertices[0]) * vertexCount;
 			Buffer stagingBuffer(
 				device,
 				bufferSize,
@@ -18,7 +18,7 @@ namespace myvk {
 				VMA_MEMORY_USAGE_CPU_ONLY
 			);
 			stagingBuffer.map();
-			stagingBuffer.writeToBuffer(vertices.data(), bufferSize);
+			stagingBuffer.writeToBuffer(instance->vertices.data(), bufferSize);
 			stagingBuffer.unmap();
 
 			vertexBuffer = std::make_unique<Buffer>(
@@ -30,9 +30,9 @@ namespace myvk {
 				VMA_MEMORY_USAGE_GPU_ONLY
 			);
 			device.copyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(), bufferSize);
-			if(freeDataOnUpload) vertices.clear();
+			if(instance->freeAfterUpload) instance->vertices.clear();
 		}
-		indexCount = static_cast<uint32_t>(indices.size());
+		indexCount = static_cast<uint32_t>(instance->indices.size());
 		if(vertexCount >= 3 && indexCount) {
 				hasIndexBuffer = indexCount > 0;
 
@@ -40,7 +40,7 @@ namespace myvk {
 				return;
 			}
 
-			VkDeviceSize bufferSize = sizeof(indices[0]) * indexCount;
+			VkDeviceSize bufferSize = sizeof(instance->indices[0]) * indexCount;
 			Buffer stagingBuffer(
 				device,
 				bufferSize,
@@ -50,7 +50,7 @@ namespace myvk {
 				VMA_MEMORY_USAGE_CPU_ONLY
 			);
 			stagingBuffer.map();
-			stagingBuffer.writeToBuffer(indices.data(), bufferSize);
+			stagingBuffer.writeToBuffer(instance->indices.data(), bufferSize);
 			stagingBuffer.unmap();
 
 			indexBuffer = std::make_unique<Buffer>(
@@ -62,27 +62,27 @@ namespace myvk {
 				VMA_MEMORY_USAGE_GPU_ONLY
 			);
 			device.copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
-			if(freeDataOnUpload) indices.clear();
+			if(instance->freeAfterUpload) instance->indices.clear();
 		}
 		uploaded = true;
 	}
 
-	void Mesh::bind(VkCommandBuffer commandBuffer) {
+	void GPUMesh::bind(VkCommandBuffer commandBuffer) const {
 		VkBuffer buffers[] = { vertexBuffer->getBuffer() };
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
 		if (hasIndexBuffer) vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
 	}
 
-	std::vector<VkVertexInputBindingDescription> Vertex::getBindingDescriptions() {
+	std::vector<VkVertexInputBindingDescription> GPUMesh::getBindingDescriptions() {
 		std::vector<VkVertexInputBindingDescription> bindingDescriptions(1);
 		bindingDescriptions[0].binding = 0;
-		bindingDescriptions[0].stride = sizeof(Vertex);
+		bindingDescriptions[0].stride = sizeof(MeshInstance::Vertex);
 		bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 		return bindingDescriptions;
 	}
 
-	std::vector<VkVertexInputAttributeDescription> Vertex::getAttributeDescriptions() {
+	std::vector<VkVertexInputAttributeDescription> GPUMesh::getAttributeDescriptions() {
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions(3);
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
@@ -92,12 +92,12 @@ namespace myvk {
 		attributeDescriptions[1].binding = 0;
 		attributeDescriptions[1].location = 1;
 		attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
-		attributeDescriptions[1].offset = offsetof(Vertex, u);
+		attributeDescriptions[1].offset = offsetof(MeshInstance::Vertex, u);
 
 		attributeDescriptions[2].binding = 0;
 		attributeDescriptions[2].location = 2;
 		attributeDescriptions[2].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-		attributeDescriptions[2].offset = offsetof(Vertex, r);
+		attributeDescriptions[2].offset = offsetof(MeshInstance::Vertex, r);
 
 		return attributeDescriptions;
 	}
