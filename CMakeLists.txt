@@ -29,6 +29,7 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(Stb REQUIRED)
+find_package(Freetype REQUIRED)
 
 target_link_libraries(${PROJECT_NAME} 
 	glfw 
@@ -37,4 +38,5 @@ target_link_libraries(${PROJECT_NAME}
 	Vulkan::Vulkan
 	GPUOpen::VulkanMemoryAllocator
 	imgui::imgui
-	${Stb_INCLUDE_DIR})
+	${Stb_INCLUDE_DIR}
+	Freetype::Freetype)
