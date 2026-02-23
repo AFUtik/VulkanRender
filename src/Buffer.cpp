@@ -52,10 +52,15 @@ Buffer::Buffer(
 Buffer::~Buffer() {
   unmap();
 
-  if(buffer == VK_NULL_HANDLE) return;
+  if (buffer == VK_NULL_HANDLE) return;
+
+  VmaAllocator alloc = device.allocator();
+  VkBuffer buf = buffer;
+  VmaAllocation allocHandle = vmaAllocation;
+
   device.getDeletionQueue().push_function(
-    [this]() {
-      vmaDestroyBuffer(device.allocator(), buffer, vmaAllocation);
+    [alloc, buf, allocHandle]() {
+      vmaDestroyBuffer(alloc, buf, allocHandle);
     }
   );
   //vkDestroyBuffer(device.device(), buffer, nullptr);

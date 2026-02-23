@@ -1,4 +1,5 @@
 #include "Descriptors.hpp"
+#include "vulkan/vulkan_core.h"
  
 // std
 #include <cassert>
@@ -52,7 +53,19 @@ DescriptorSetLayout::DescriptorSetLayout(
 }
  
 DescriptorSetLayout::~DescriptorSetLayout() {
-  vkDestroyDescriptorSetLayout(device.device(), descriptorSetLayout, nullptr);
+  if (descriptorSetLayout == VK_NULL_HANDLE)
+        return;
+
+  VkDevice dev = device.device();
+  VkDescriptorSetLayout layout = descriptorSetLayout;
+
+  device.getDeletionQueue().push_function(
+      [dev, layout]() {
+          vkDestroyDescriptorSetLayout(dev, layout, nullptr);
+      }
+  );
+  
+  descriptorSetLayout = VK_NULL_HANDLE;
 }
  
 // *************** Descriptor Pool Builder *********************
@@ -97,7 +110,19 @@ DescriptorPool::DescriptorPool(
 }
  
 DescriptorPool::~DescriptorPool() {
-  vkDestroyDescriptorPool(device.device(), descriptorPool, nullptr);
+  if (descriptorPool == VK_NULL_HANDLE)
+        return;
+
+  VkDevice dev = device.device();
+  VkDescriptorPool pool = descriptorPool;
+
+  device.getDeletionQueue().push_function(
+      [dev, pool]() {
+          vkDestroyDescriptorPool(dev, pool, nullptr);
+      }
+  );
+
+  descriptorPool = VK_NULL_HANDLE;
 }
  
 bool DescriptorPool::allocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor) const {

@@ -43,7 +43,12 @@ bool HasStencilComponent(VkFormat Format)
 		    (Format == VK_FORMAT_D24_UNORM_S8_UINT));
 }
 
-GPUTexture::GPUTexture(Device& device, std::shared_ptr<Texture2D> texture) : device(device) {
+GPUTexture::GPUTexture(Device& device, Texture2D& texture) : 
+	device(device),
+	imageWidth(texture.width),
+	imageHeight(texture.height),
+	imageChannels(texture.channels)
+{
     createGPUTexture(texture);
 }
 
@@ -214,9 +219,9 @@ void GPUTexture::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout ne
 	device.endSingleTimeCommands(m_copyCmdBuf);
 }
 
-void GPUTexture::createGPUTexture(std::shared_ptr<Texture2D> texture) {
+void GPUTexture::createGPUTexture(Texture2D& texture) {
 	format = VK_FORMAT_R8G8B8A8_SRGB;
-	createGPUTextureFromData(texture->raw());
+	createGPUTextureFromData(texture.raw());
 }
 
 void GPUTexture::createGPUTextureFromData(const void* pPixels)

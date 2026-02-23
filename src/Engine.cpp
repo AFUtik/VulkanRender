@@ -3,7 +3,10 @@
 #include "Descriptors.hpp"
 #include "RenderSystem.hpp"
 #include "Swapchain.hpp"
-#include "Texture.hpp"
+#include "model/GPUMesh.hpp"
+#include "model/GPUTexture.hpp"
+#include "model/Mesh.hpp"
+#include "model/Texture.hpp"
 #include "vulkan/vulkan_core.h"
 
 #include <memory>
@@ -32,6 +35,7 @@ Engine::Engine() : camera(window.width, window.height, glm::dvec3(0, 0, 0), glm:
 		.addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 62)
 		.build();
 
+	createLayouts();
 	loadModels();
 }
 
@@ -39,26 +43,39 @@ Engine::~Engine() {
 
 }
 
-void Engine::run() {
-	std::vector<std::unique_ptr<Buffer>> uboBuffers(SwapChain::MAX_FRAMES_IN_FLIGHT);
-	for(int i = 0; i < uboBuffers.size(); i++) {
-		uboBuffers[i] = std::make_unique<Buffer>(
+void Engine::createLayouts() {
+	uniform.resize(SwapChain::MAX_FRAMES_IN_FLIGHT);
+	for(int i = 0; i < uniform.size(); i++) {
+		uniform[i] = std::make_unique<Buffer>(
 			device, 
 			sizeof(GlobalUbo),
 			1,
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 
 			VMA_MEMORY_USAGE_CPU_TO_GPU);
-		uboBuffers[i]->map();
+		uniform[i]->map();
 	}
 
-	auto globalSetLayout = DescriptorSetLayout::Builder(device)
+	globalSetLayout = DescriptorSetLayout::Builder(device)
 		.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
 		.build();
+	layouts.push_back(globalSetLayout->getDescriptorSetLayout());
 
-	auto materialSetLayout = DescriptorSetLayout::Builder(device)
+	materialSetLayout = DescriptorSetLayout::Builder(device)
 		.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.build();
+	layouts.push_back(materialSetLayout->getDescriptorSetLayout());
+
+	globalDescriptorSets.resize(SwapChain::MAX_FRAMES_IN_FLIGHT);
+	for(int i = 0; i < globalDescriptorSets.size(); i++) {
+		auto bufferInfo = uniform[i]->descriptorInfo();
+		DescriptorWriter(*globalSetLayout, *globalPool)
+			.writeBuffer(0, &bufferInfo)
+			.build(globalDescriptorSets[i]);
+	}
+}
+
+void Engine::run() {
 
 	//VkDescriptorImageInfo imageInfo;
 	//if(model->texture) {
@@ -67,21 +84,7 @@ void Engine::run() {
 	//	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	//}
 
-	std::vector<VkDescriptorSet> globalDescriptorSets(SwapChain::MAX_FRAMES_IN_FLIGHT);
-	for(int i = 0; i < globalDescriptorSets.size(); i++) {
-		auto bufferInfo = uboBuffers[i]->descriptorInfo();
-		DescriptorWriter(*globalSetLayout, *globalPool)
-			.writeBuffer(0, &bufferInfo)
-			.build(globalDescriptorSets[i]);
-	}
-
-	auto texture  = std::make_shared<Texture>(device, "C:/cplusplus/VulkanRender/VulkanRender/resources/img/green.png");
-	model->material = std::make_shared<Material>(*globalPool, *materialSetLayout, texture);
-
-	RenderSystem renderSystem(device, renderer.getSwapChainRenderPass(), {
-		globalSetLayout->getDescriptorSetLayout(), 
-		materialSetLayout->getDescriptorSetLayout()
-	});
+	RenderSystem renderSystem(device, renderer.getSwapChainRenderPass(), layouts);
 
 	Events::toggle_cursor(&window);
 	double lastTime = glfwGetTime();
@@ -147,10 +150,10 @@ void Engine::run() {
 				GlobalUbo ubo{};
 				ubo.projview = camera.getProjview();
 				
-				uboBuffers[frameIndex]->writeToBuffer(&ubo);
-				uboBuffers[frameIndex]->flush();
+				uniform[frameIndex]->writeToBuffer(&ubo);
+				uniform[frameIndex]->flush();
 
-				renderSystem.render(frameInfo);
+				renderSystem.render(frameInfo, model.get());
 
 				renderer.endSwapChainRenderPass(commandBuffer);
 				renderer.endFrame();
@@ -167,15 +170,26 @@ void Engine::run() {
 }
 
 void Engine::loadModels() {
-	std::vector<Model::Vertex> vertices{
-		{1.0f, 1.0f, 0.0f,   1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f},
-		{1.0f, -1.0f, 0.0f,  1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f},
-		{-1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f},
-		{-1.0f, 1.0f, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f}
-	};
-	std::vector<uint32_t> indices{
-		0, 1, 2,
-    	2, 3, 0
-	};
-	model = std::make_unique<Model>(device, vertices, indices);
+	model = std::make_shared<Model>();
+
+	MeshInstance meshInstance;
+	meshInstance.vertices.push_back({1.0f, 1.0f, 0.0f,   1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f});
+	meshInstance.vertices.push_back({1.0f, -1.0f, 0.0f,  1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f});
+	meshInstance.vertices.push_back({-1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f});
+	meshInstance.vertices.push_back({-1.0f, 1.0f, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f});
+
+	meshInstance.indices.push_back(0);
+	meshInstance.indices.push_back(1);
+	meshInstance.indices.push_back(2);
+	meshInstance.indices.push_back(2);
+	meshInstance.indices.push_back(3);
+	meshInstance.indices.push_back(0);
+
+	model->mesh = std::make_shared<GPUMesh>(device, meshInstance);
+	
+	Texture2D texture;
+	texture.load("C:/cplusplus/VulkanRender/VulkanRender/resources/img/green.png");
+
+	std::shared_ptr<GPUTexture> gpuTexture = std::make_shared<GPUTexture>(device, texture);
+	model->material = std::make_shared<GPUMaterial>(*globalPool, *materialSetLayout, gpuTexture);
 }

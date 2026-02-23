@@ -5,12 +5,13 @@
 #include "window/Events.hpp"
 #include "window/Window.hpp"
 #include "Renderer.hpp"
-#include "Model.hpp"
+
 #include "Camera.hpp"
 #include "Descriptors.hpp"
 #include "Buffer.hpp"
 #include "FrameInfo.hpp"
-#include "Texture.hpp"
+
+#include "model/Model.hpp"
 
 #include <memory>
 #include <vector>
@@ -29,6 +30,7 @@ namespace myvk {
 
 		void run();
 	private:
+		void createLayouts();
 		void loadModels();
 
 		Window window{ WIDTH, HEIGHT, "Vulkan Engine" };
@@ -38,6 +40,12 @@ namespace myvk {
 		Camera camera;
 
 		std::unique_ptr<DescriptorPool> globalPool{};
-		std::unique_ptr<Model> model;
+		std::unique_ptr<DescriptorSetLayout> globalSetLayout;
+		std::unique_ptr<DescriptorSetLayout> materialSetLayout;
+		std::vector<VkDescriptorSet> globalDescriptorSets;
+		std::vector<VkDescriptorSetLayout> layouts;
+		std::vector<std::unique_ptr<Buffer>> uniform;
+
+		std::shared_ptr<Model> model;
 	};
 }

@@ -1,6 +1,7 @@
 #include "Pipeline.hpp"
-#include "Model.hpp"
-#include "vulkan/vulkan_core.h"
+
+#include "model/GPUMesh.hpp"
+#include "model/Model.hpp"
 
 #include <fstream>
 #include <iostream>
@@ -77,8 +78,8 @@ namespace myvk {
 		shaderStages[1].pNext = nullptr;
 		shaderStages[1].pSpecializationInfo = nullptr;
 
-		auto bindingDescriptions = Model::Vertex::getBindingDescriptions();
-		auto attributeDescriptions = Model::Vertex::getAttributeDescriptions();
+		auto bindingDescriptions = GPUMesh::getBindingDescriptions();
+		auto attributeDescriptions = GPUMesh::getAttributeDescriptions();
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 		vertexInputInfo.vertexAttributeDescriptionCount =

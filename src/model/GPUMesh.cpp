@@ -1,14 +1,14 @@
 #include "GPUMesh.hpp"
 
 namespace myvk {
-	GPUMesh::GPUMesh(Device& device, std::shared_ptr<MeshInstance> instance) : device(device), instance(instance) {
-		createBuffers(device);
+	GPUMesh::GPUMesh(Device& device, MeshInstance& instance) : device(device) {
+		createBuffers(device, instance);
 	}
 
-    void GPUMesh::createBuffers(Device& device) {
-		vertexCount = static_cast<uint32_t>(instance->vertices.size());
+    void GPUMesh::createBuffers(Device& device, MeshInstance& instance) {
+		vertexCount = static_cast<uint32_t>(instance.vertices.size());
 		if(vertexCount >= 3) {
-			VkDeviceSize bufferSize = sizeof(instance->vertices[0]) * vertexCount;
+			VkDeviceSize bufferSize = sizeof(instance.vertices[0]) * vertexCount;
 			Buffer stagingBuffer(
 				device,
 				bufferSize,
@@ -18,7 +18,7 @@ namespace myvk {
 				VMA_MEMORY_USAGE_CPU_ONLY
 			);
 			stagingBuffer.map();
-			stagingBuffer.writeToBuffer(instance->vertices.data(), bufferSize);
+			stagingBuffer.writeToBuffer(instance.vertices.data(), bufferSize);
 			stagingBuffer.unmap();
 
 			vertexBuffer = std::make_unique<Buffer>(
@@ -30,17 +30,12 @@ namespace myvk {
 				VMA_MEMORY_USAGE_GPU_ONLY
 			);
 			device.copyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(), bufferSize);
-			if(instance->freeAfterUpload) instance->vertices.clear();
 		}
-		indexCount = static_cast<uint32_t>(instance->indices.size());
+		indexCount = static_cast<uint32_t>(instance.indices.size());
 		if(vertexCount >= 3 && indexCount) {
-				hasIndexBuffer = indexCount > 0;
-
-			if (!hasIndexBuffer) {
-				return;
-			}
-
-			VkDeviceSize bufferSize = sizeof(instance->indices[0]) * indexCount;
+			hasIndexBuffer = true;
+			
+			VkDeviceSize bufferSize = sizeof(instance.indices[0]) * indexCount;
 			Buffer stagingBuffer(
 				device,
 				bufferSize,
@@ -50,7 +45,7 @@ namespace myvk {
 				VMA_MEMORY_USAGE_CPU_ONLY
 			);
 			stagingBuffer.map();
-			stagingBuffer.writeToBuffer(instance->indices.data(), bufferSize);
+			stagingBuffer.writeToBuffer(instance.indices.data(), bufferSize);
 			stagingBuffer.unmap();
 
 			indexBuffer = std::make_unique<Buffer>(
@@ -62,9 +57,16 @@ namespace myvk {
 				VMA_MEMORY_USAGE_GPU_ONLY
 			);
 			device.copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
-			if(instance->freeAfterUpload) instance->indices.clear();
 		}
 		uploaded = true;
+	}
+
+	void GPUMesh::draw(VkCommandBuffer commandBuffer) const {
+		if (hasIndexBuffer) {
+			vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
+		} else {
+			vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
+		}
 	}
 
 	void GPUMesh::bind(VkCommandBuffer commandBuffer) const {

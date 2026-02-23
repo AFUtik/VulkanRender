@@ -10,7 +10,7 @@
 namespace myvk {
     class GPUTexture {
     public:
-        GPUTexture(Device& device, std::shared_ptr<Texture2D> texture);
+        GPUTexture(Device& device, Texture2D& texture);
         ~GPUTexture();
 
         GPUTexture(const GPUTexture&) = delete;
@@ -33,7 +33,7 @@ namespace myvk {
 
         void createGPUTextureFromData(const void* pPixels);
 
-		void createGPUTexture(std::shared_ptr<Texture2D> texture);
+		void createGPUTexture(Texture2D& texture);
 
         bool isCubemap = false;
         int imageWidth, imageHeight, imageChannels;

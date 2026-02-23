@@ -16,19 +16,20 @@ private:
 	bool hasIndexBuffer = false;
 	uint32_t vertexCount;
 	uint32_t indexCount;
+	
+	void createBuffers(Device& device, MeshInstance& instance);
 
 	friend class RenderSystem;
 public:
-	std::shared_ptr<MeshInstance> instance;
-
-	GPUMesh(Device& device, std::shared_ptr<MeshInstance> instance);
-	~GPUMesh();
+	GPUMesh(Device& device, MeshInstance& instance);
+	~GPUMesh() {};
 
 	GPUMesh(const GPUMesh&) = delete;
 	GPUMesh& operator=(const GPUMesh&) = delete;
 	
-	void createBuffers(Device& device);
+	void draw(VkCommandBuffer commandBuffer) const;
 	void bind(VkCommandBuffer commandBuffer) const;
+
 	static std::vector<VkVertexInputBindingDescription>   getBindingDescriptions();
 	static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
 };

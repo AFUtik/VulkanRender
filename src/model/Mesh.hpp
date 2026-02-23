@@ -7,9 +7,6 @@ namespace myvk
 
 struct MeshInstance {
 public:
-    uint32_t meshHadler = UINT32_MAX;
-    bool handlerAssigned = false;
-
     struct Vertex {
         float x, y, z;
         float u, v;
@@ -18,10 +15,16 @@ public:
 
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
-    bool freeAfterUpload = true;
     
-	MeshInstance();
-	~MeshInstance();
+	MeshInstance(uint32_t reservedVertices, uint32_t reservedIndices) {
+        vertices.reserve(reservedVertices);
+        indices.reserve(reservedIndices);
+    };
+    MeshInstance() {};
+	~MeshInstance() {};
+
+    MeshInstance(const MeshInstance&) = delete;
+	MeshInstance& operator=(const MeshInstance&) = delete;
 };
 
 }

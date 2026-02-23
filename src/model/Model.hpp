@@ -1,13 +1,12 @@
 #pragma once
 
 
-#include <cstdint>
+#include "model/GPUMaterial.hpp"
+#include "model/GPUMesh.hpp"
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
-
-#include "GPUResources.hpp"
 
 #include <vector>
 #include <memory>
@@ -66,13 +65,14 @@ namespace myvk {
 	class Model {
 	public:
 		Transform transform;
-		ResourceHandle material;
-		ResourceHandle mesh;
+		std::shared_ptr<GPUMesh> mesh;
+		std::shared_ptr<GPUMaterial> material;
 
-		Model(ResourceHandle meshHandle = UINT32_MAX, ResourceHandle materialHandle = UINT32_MAX);
-		~Model();
+		Model() {};
+		~Model() {};
 
 		Model(const Model&) = delete;
 		Model& operator=(const Model&) = delete;
+	
 	};
 }

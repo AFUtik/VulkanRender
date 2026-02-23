@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Pipeline.hpp"
-#include "Model.hpp"
 #include "FrameInfo.hpp"
-
 #include "Camera.hpp"
+
+#include "model/Model.hpp"
 
 #include <memory>
 #include <unordered_map>
@@ -26,8 +26,7 @@ namespace myvk {
 		RenderSystem(const RenderSystem&) = delete;
 		RenderSystem& operator=(const RenderSystem&) = delete;
 
-		void create(std::shared_ptr<Model> model);
-		void render(FrameInfo& frame);
+		void render(FrameInfo& frame, Model* model);
 	private:
 		void createPipelineLayout(const std::vector<VkDescriptorSetLayout>& layouts);
 		void createPipeline(VkRenderPass renderPass);
