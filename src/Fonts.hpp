@@ -9,14 +9,25 @@
 
 namespace myvk {
 
-class Font {
+class FontSample {
     FT_Face face;
-    uint32_t px;
+
+    friend class FontHandler;
 public:
+
+};
+
+class Font {
+    FontSample* sample;
+    uint32_t px_h;
     
+    float scale = 1.0f;
+public:
+
 };
 
 class Text {
+    Font* font;
     int pen_x = 0;
     int pen_y = 0;
 public:
@@ -24,7 +35,7 @@ public:
 
 class FontHandler {
 private:
-    std::unordered_map<std::string, std::unique_ptr<Font>> facesMap;
+    std::unordered_map<std::string, std::unique_ptr<FontSample>> fontMap;
     FT_Library library;
 
     void initLibrary();

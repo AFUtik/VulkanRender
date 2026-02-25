@@ -3,8 +3,6 @@
 #include <string>
 #include <memory>
 
-namespace myvk {
-
 class Texture2D {
 public:
     std::string path;
@@ -18,8 +16,8 @@ public:
     int width;
     int height;
     int channels;
+
+    void paste(Texture2D* src, uint32_t offsetX, uint32_t offsetY);
 private:
     uint8_t* pixels = nullptr;
 };
-
-}
