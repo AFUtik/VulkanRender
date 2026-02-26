@@ -6,11 +6,28 @@
 
 #include <ft2build.h>
 
-namespace myvk 
-{
+// FONT //
+
+
+
+// FONT SAMPLE //
+
+FontSample::FontSample() {
+    
+}
+
+FontSample::~FontSample() {
+    FT_Done_Face(face);
+}
+
+// FONT HANDLER //
 
 FontHandler::FontHandler() {
     initLibrary();
+}
+
+FontHandler::~FontHandler() {
+    FT_Done_FreeType(library);
 }
 
 void FontHandler::initLibrary() {
@@ -56,4 +73,11 @@ void FontHandler::loadFromMemory(const std::string &fontname, const std::vector<
     }
 }
 
+FontSample* FontHandler::getFontSample(const std::string& fontname) {
+    if(fontMap.find(fontname) != fontMap.end()) {
+        return fontMap[fontname].get();
+    } else {
+        std::cerr << fontname << " not found in fonts, returned default font" << std::endl;
+        return fontMap[defaultFontName].get();
+    }
 }

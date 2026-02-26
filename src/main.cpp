@@ -5,20 +5,22 @@
 #include "RenderSystem.hpp"
 #include "model/Texture.hpp"
 
+#include "Fonts.hpp"
+
 int main()
 {
-	Texture2D stone;
-	stone.load(absolutePath+"resources/img/stone.png");
+	FontHandler fontHandler;
+	fontHandler.loadFromDisk("PlayfulTime", absolutePath+"resources/fonts/playfulTime.ttf");
 
-	Texture2D sand;
-	sand.load(absolutePath+"resources/img/sand.png");
+	FontSample* sample = fontHandler.getFontSample("PlayfulTime");
 
-	AtlasDescriptor atlasDesc(256, 256, 0, 0);
-	atlasDesc.insert(&stone);
-	atlasDesc.insert(&sand);
+	Font font;
+	font.sample = sample;
 
-	AtlasBitmap atlasBitmap(atlasDesc);
-	atlasBitmap.save(absolutePath+"resources/img/atlas.png");
+	
+
+
+	std::cout << "okay" << std::endl;
 
 	//myvk::Engine engine{};
 

@@ -24,7 +24,7 @@ void AtlasDescriptor::packAll() {
     packed = true;
 }
 
-AtlasBitmap::AtlasBitmap(AtlasDescriptor& atlasDesc) : Texture2D() {
+void AtlasBitmap::create(AtlasDescriptor& atlasDesc) {
     width  = atlasDesc.width;
     height = atlasDesc.height;
     pixels = new uint8_t[atlasDesc.width*atlasDesc.height*4];

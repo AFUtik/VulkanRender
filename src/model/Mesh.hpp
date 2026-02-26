@@ -1,11 +1,12 @@
 #pragma once
 
 #include <vector>
+#include "../Fonts.hpp"
 
 namespace myvk 
 {
 
-struct MeshInstance {
+class MeshInstance {
 public:
     struct Vertex {
         float x, y, z;
@@ -16,15 +17,21 @@ public:
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
     
-	MeshInstance(uint32_t reservedVertices, uint32_t reservedIndices) {
+	MeshInstance(uint32_t reservedVertices, uint32_t reservedIndices = 0) {
         vertices.reserve(reservedVertices);
-        indices.reserve(reservedIndices);
+        if(reservedIndices) indices.reserve(reservedIndices);
     };
     MeshInstance() {};
 	~MeshInstance() {};
 
     MeshInstance(const MeshInstance&) = delete;
 	MeshInstance& operator=(const MeshInstance&) = delete;
+};
+
+class TextMesh : public MeshInstance {
+    Text* text = nullptr;
+public:
+    TextMesh(Text* text) : MeshInstance(512), text(text) {};
 };
 
 }
