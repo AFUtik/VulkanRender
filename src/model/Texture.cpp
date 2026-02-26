@@ -1,10 +1,13 @@
 #include "Texture.hpp"
 
 #include <stb_image.h>
+#include "stb_image_write.h"
+
 #include <iostream>
 
 void Texture2D::load(std::string path) {
     pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+    channels = 4;
     if (!pixels) {
     #ifndef _WIN64
         char cwd[PATH_MAX];
@@ -17,6 +20,8 @@ void Texture2D::load(std::string path) {
         printf("Error loading Texture from '%s'\n", path.c_str());
         exit(1);
     }
+
+    this->path = path;
 }
 
 Texture2D::~Texture2D() {
@@ -41,4 +46,15 @@ void Texture2D::paste(Texture2D *src, uint32_t offsetX, uint32_t offsetY) {
             (y * src->width) * bytesPerPixel;
         memcpy(dstRow, srcRow, src->width * bytesPerPixel);
     }
+}
+
+void Texture2D::save(const std::string& path) {
+    stbi_write_png(
+        path.c_str(),
+        width,
+        height,
+        channels,
+        pixels,
+        width * channels  // stride (bytes per row)
+    );
 }
