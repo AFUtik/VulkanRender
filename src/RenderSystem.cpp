@@ -1,4 +1,5 @@
 #include "RenderSystem.hpp"
+#include "Pipeline.hpp"
 
 #include <functional>
 #include <stdexcept>
@@ -12,11 +13,19 @@ using namespace myvk;
 
 RenderSystem::RenderSystem(Device &device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts) : device(device) {
 	createPipelineLayout(layouts);
-	createPipeline(renderPass);
+
+	PipelineConfigInfo config{};
+	Pipeline::defaultPipelineConfigInfo(config);
+
+	createPipeline(renderPass, config);
 }
 
 RenderSystem::~RenderSystem() {
 	vkDestroyPipelineLayout(device.device(), pipelineLayout, nullptr);
+}
+
+void RenderSystem::addModel(Model* model) {
+	models.push_back(model);
 }
 
 void RenderSystem::createPipelineLayout(const std::vector<VkDescriptorSetLayout>& layouts) {
@@ -37,11 +46,9 @@ void RenderSystem::createPipelineLayout(const std::vector<VkDescriptorSetLayout>
 	}
 }
 
-void RenderSystem::createPipeline(VkRenderPass renderPass) {
+void RenderSystem::createPipeline(VkRenderPass renderPass ,PipelineConfigInfo& pipelineConfig) {
 	assert(pipelineLayout != nullptr && "Cannot create pipeline before pipeline layout");
 
-	PipelineConfigInfo pipelineConfig{};
-	Pipeline::defaultPipelineConfigInfo(pipelineConfig);
 	pipelineConfig.renderPass = renderPass;
 	pipelineConfig.pipelineLayout = pipelineLayout;
 	pipeline = std::make_unique<Pipeline>(
@@ -51,7 +58,7 @@ void RenderSystem::createPipeline(VkRenderPass renderPass) {
 		pipelineConfig);
 }
 
-void RenderSystem::render(FrameInfo& frame, Model* model) {
+void RenderSystem::render(FrameInfo& frame) {
 	pipeline->bind(frame.commandBuffer);
 	vkCmdBindDescriptorSets(
 		frame.commandBuffer,
@@ -62,17 +69,18 @@ void RenderSystem::render(FrameInfo& frame, Model* model) {
 		&frame.globalDescriptorSet,
 		0, nullptr
 	);
+	for(auto& model : models) {
+		model->material->bind(frame.commandBuffer, pipelineLayout, frame.frameIndex);
 
-	model->material->bind(frame.commandBuffer, pipelineLayout, frame.frameIndex);
-
-	vkCmdPushConstants(
-		frame.commandBuffer,
-		pipelineLayout,
-		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-		0,
-		sizeof(PushConstantData),
-		&model->transform.model()
-	);
-	model->mesh->bind(frame.commandBuffer);
-	model->mesh->draw(frame.commandBuffer);
+		vkCmdPushConstants(
+			frame.commandBuffer,
+			pipelineLayout,
+			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+			0,
+			sizeof(PushConstantData),
+			&model->transform.model()
+		);
+		model->mesh->bind(frame.commandBuffer);
+		model->mesh->draw(frame.commandBuffer);
+	}
 }

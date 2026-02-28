@@ -20,70 +20,92 @@ void AtlasDescriptor::insert(Texture2D* texture) {
 }
 
 void AtlasDescriptor::packAll() {
-    packedFull = stbrp_pack_rects(&context, rects.data(), rects.size());
-    packed = true;
+    stbrp_pack_rects(&context, rects.data(), rects.size());
+}
+
+stbrp_rect AtlasDescriptor::pack(Texture2D* texture) {
+    stbrp_rect rect{index, texture->width + padding_x, texture->height + padding_y*2};
+    stbrp_pack_rects(&context, &rect, 1);
+    index++;
+    return rect;
 }
 
 void AtlasBitmap::create(AtlasDescriptor& atlasDesc) {
-    width  = atlasDesc.width;
-    height = atlasDesc.height;
-    pixels = new uint8_t[atlasDesc.width*atlasDesc.height*4];
-    channels = 4;
-
+    if(!pixels) {
+        tiles.resize(atlasDesc.width);
+        width  = atlasDesc.width;
+        height = atlasDesc.height;
+        pixels = new uint8_t[atlasDesc.width*atlasDesc.height*4];
+        channels = 4;
+    }
     padding_x = atlasDesc.padding_x;
     padding_y = atlasDesc.padding_y;
 
-    if(!atlasDesc.packed) atlasDesc.packAll();
-    if(!atlasDesc.packedFull) {std::cerr << "Failed to pack rect (try to resize atlas)" << std::endl;}
-
-    tiles.resize(atlasDesc.rects.size());
     pasteImages(atlasDesc.rects, atlasDesc.images);
 }
 
-void AtlasBitmap::addPadding(stbrp_rect& rect, Texture2D* texture) {
+void AtlasBitmap::addPadding(const stbrp_rect& rect) {
+    uint32_t srcW = rect.w - padding_x;
+    uint32_t srcH = rect.h - padding_y*2;
+
     // VERTICAL BOTTOM PADDING //
-    const uint8_t* bottomToCopy = texture->pixelPtr(0, texture->height-1);
+    const uint8_t* bottomToCopy = pixelPtr(rect.x, rect.y + srcH-1 + padding_y);
     for (int i = 0; i < padding_y; i++)
     {
         memcpy(
-            pixelPtr(rect.x, rect.y + (rect.h-padding_y) + i),
+            pixelPtr(rect.x, rect.y + srcH + padding_y + i),
             bottomToCopy,
-            (texture->width) * channels
+            srcW * channels
+        );
+    }
+
+    // VERTICAL UPPER PADDING //
+    const uint8_t* upToCopy = pixelPtr(rect.x, rect.y + padding_y);
+    for (int i = 0; i < padding_y; i++)
+    {
+        memcpy(
+            pixelPtr(rect.x, rect.y + i),
+            upToCopy,
+            srcW * channels
         );
     }
 
     // HORIZONTAL RIGHT PADDING //
-    for (int i = 0; i < rect.h; i++) {
+    for (int i = 0; i < srcH; i++) {
         uint32_t* dst =
             reinterpret_cast<uint32_t*>(
-                pixelPtr(rect.x + texture->width, i));
+                pixelPtr(rect.x + srcW,
+                        rect.y + i));
 
         uint32_t* src =
             reinterpret_cast<uint32_t*>(
-                pixelPtr(rect.x + texture->width - 1, i));
+                pixelPtr(rect.x + srcW - 1,
+                        rect.y + i));
 
-        for (uint32_t p = 0; p < padding_x; p++)
-        {
+        for (uint32_t p = 0; p < padding_x; p++) {
             dst[p] = *src;
-        }
     }
+}
 }
 
 void AtlasBitmap::pasteImages(std::vector<stbrp_rect> &rects, std::vector<Texture2D*> &images) {
-    for(int i = 0; i < rects.size(); i++) {
-        if (!rects[i].was_packed)
-            continue;
+    for(int i = 0; i < rects.size(); i++) extend(rects[i], images[i]);
+}
 
-        paste(images[i], rects[i].x, rects[i].y);
-        addPadding(rects[i], images[i]);
+void AtlasBitmap::extend(const stbrp_rect& rect, Texture2D* texture) {
+    if (!rect.was_packed) return;
 
-        Tile& t = tiles[i];
+    pasteGrayscale(texture, rect.x, rect.y + padding_y);
+    addPadding(rect);
 
-        t.u1 = (float)rects[i].x / width;
-        t.v1 = (float)rects[i].y / height;
-        t.u2 = (float)(rects[i].x + (rects[i].w - padding_x)) / width;
-        t.v2 = (float)(rects[i].y + (rects[i].h - padding_y)) / height;
-    }
+    Tile& t = tiles[rect.id];
+
+    t.width  = texture->width;
+    t.height = texture->height;
+    t.u1 = (float)rect.x / width;
+    t.v1 = (float)(rect.y + padding_y) / height;
+    t.u2 = (float)(rect.x + (rect.w - padding_x)) / width;
+    t.v2 = (float)(rect.y + (rect.h - padding_y)) / height;
 }
 
 const Tile& AtlasBitmap::getTile(int index) const {

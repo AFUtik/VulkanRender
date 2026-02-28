@@ -1,7 +1,8 @@
 #pragma once
 
 #include <vector>
-#include "../Fonts.hpp"
+
+class Text;
 
 namespace myvk 
 {
@@ -16,6 +17,7 @@ public:
 
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
+    uint32_t indCount = 0;
     
 	MeshInstance(uint32_t reservedVertices, uint32_t reservedIndices = 0) {
         vertices.reserve(reservedVertices);
@@ -30,8 +32,12 @@ public:
 
 class TextMesh : public MeshInstance {
     Text* text = nullptr;
+    int pen_x = 100;
+    int pen_y = 900;
+
+    void buildVertices();
 public:
-    TextMesh(Text* text) : MeshInstance(512), text(text) {};
+    TextMesh(Text* text);
 };
 
 }

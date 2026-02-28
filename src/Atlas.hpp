@@ -10,9 +10,9 @@
 
 // Describes texture in atlas, stores index and uv coord. //
 struct Tile {
-    int index;
     float u1 = 0.0f, v1 = 0.0f;
     float u2 = 0.0f, v2 = 0.0f;
+    uint32_t width = 0, height = 0;
     int padding = 0;
 };
 
@@ -37,6 +37,8 @@ public:
 
     void insert(Texture2D* texture);
     void packAll();
+    
+    stbrp_rect pack(Texture2D* texture);
 };
 
 class AtlasBitmap : public Texture2D {
@@ -45,10 +47,11 @@ private:
     int padding_y = 0;
     std::vector<Tile> tiles;
 
-    void addPadding(stbrp_rect& rect, Texture2D* texture);
+    void addPadding(const stbrp_rect& rect);
     void pasteImages(std::vector<stbrp_rect> &rects, std::vector<Texture2D*> &images);
 public:
     void create(AtlasDescriptor& desc);
+    void extend(const stbrp_rect& rect, Texture2D* texture);
 
     const Tile& getTile(int index) const;
 };

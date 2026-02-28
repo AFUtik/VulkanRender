@@ -21,17 +21,19 @@ namespace myvk {
 	class RenderSystem {
 	public:
 		RenderSystem(Device& device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts);
+		RenderSystem(Device& device) : device(device) {};
 		~RenderSystem();
 
 		RenderSystem(const RenderSystem&) = delete;
 		RenderSystem& operator=(const RenderSystem&) = delete;
 
-		void render(FrameInfo& frame, Model* model);
-	private:
+		void render(FrameInfo& frame);
+		void addModel(Model* model);
+	protected:
 		void createPipelineLayout(const std::vector<VkDescriptorSetLayout>& layouts);
-		void createPipeline(VkRenderPass renderPass);
+		void createPipeline(VkRenderPass renderPass, PipelineConfigInfo& pipelineConfig);
 
-		std::unordered_map<Model*, std::shared_ptr<Model>> models;
+		std::vector<Model*> models;
 
 		Device& device;
 

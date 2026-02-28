@@ -7,29 +7,18 @@
 
 #include "Fonts.hpp"
 
+#include <string>
+
 int main()
 {
-	FontHandler fontHandler;
-	fontHandler.loadFromDisk("PlayfulTime", absolutePath+"resources/fonts/playfulTime.ttf");
+	myvk::Engine engine{};
 
-	FontSample* sample = fontHandler.getFontSample("PlayfulTime");
-
-	Font font;
-	font.sample = sample;
-
-	
-
-
-	std::cout << "okay" << std::endl;
-
-	//myvk::Engine engine{};
-
-	//try {
-	//	engine.run();
-	//}
-	//catch (const std::exception& e) {
-	//	std::cerr << e.what() << '\n';
-	//	return EXIT_FAILURE;
-	//}
+	try {
+		engine.run();
+	}
+	catch (const std::exception& e) {
+		std::cerr << e.what() << '\n';
+		return EXIT_FAILURE;
+	}
 	return 0;
 }

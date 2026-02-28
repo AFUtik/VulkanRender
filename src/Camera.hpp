@@ -1,5 +1,6 @@
 #pragma once
 
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include "glm/ext/vector_double3.hpp"
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
@@ -97,7 +98,9 @@ class Camera {
 	mat4 rotation;
 	mat4 view;
 	mat4 proj;
-	mat4 projview;
+
+	mat4 prospective;
+    mat4 ortho;
 
 	dvec3 getRebaseShift();
 public:
@@ -123,9 +126,8 @@ public:
 
 	void update();
 
-	const mat4& getProjview();
-	mat4 getProjection();
-	mat4 getView();
+	const mat4& getProjviewProspective();
+    const mat4& getProjviewOrtho();
 
 	vec3 getViewDir();
 

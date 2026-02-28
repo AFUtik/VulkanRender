@@ -2,6 +2,10 @@
 
 Camera::Camera(int width, int height, dvec3 position, float fov) : width(width), height(height), originPosition(position), fov(fov), rotation(1.0f) {
 	updateVectors();
+
+	ortho = glm::ortho(0.0f, (float)width,
+           					 (float)height, 0.0f,   // если хочешь origin сверху
+           					 0.0f, 1.0f);
 }
 
 void Camera::set(const glm::dvec3& p) {
@@ -42,14 +46,19 @@ void Camera::update() {
 		1000.0f
 	);
 
-	projview = proj * view;
-	if(frustum_flag) frustum.update(projview);
+	prospective = proj * view;
+	if(frustum_flag) frustum.update(prospective);
 }
 
-const mat4& Camera::getProjview() {
-	return projview;
+const mat4& Camera::getProjviewProspective() {
+	return prospective;
 }
 
+const mat4& Camera::getProjviewOrtho() {
+	return ortho;
+}
+
+/*
 mat4 Camera::getProjection() {
 	float aspect = (float)width / (float)height;
 	return glm::perspective(fov, aspect, 0.1f, 1000.0f);
@@ -57,7 +66,7 @@ mat4 Camera::getProjection() {
 
 mat4 Camera::getView() {
 	return glm::lookAt(offsetPosition, offsetPosition + z_dir, y_dir);
-}
+}*/
 
 vec3 Camera::getViewDir() {
 	vec3 forward = -vec3(view[0][2], view[1][2], view[2][2]);
