@@ -1,6 +1,7 @@
 #include "Fonts.hpp"
 #include "Atlas.hpp"
 #include "freetype/freetype.h"
+#include "freetype/ftimage.h"
 #include "model/Texture.hpp"
 #include <memory>
 #include <stdexcept>
@@ -17,7 +18,8 @@ Font::Font(FontSample* sample_) : sample_(sample_)
 }
 
 void Font::update() {
-    sample_->toBitmap(info, atlasBitmap);
+    sample_->loadGlyphs(info_);
+    sample_->toBitmap(info_, atlasBitmap);
 }
 
 // TEXT //
@@ -26,6 +28,8 @@ Text::Text(Font* font, std::u32string content) : font(font), content(content) {
 
 }
 
+
+
 // FONT SAMPLE //
 
 FontSample::FontSample(FT_Face face) : face(face) {
@@ -33,7 +37,7 @@ FontSample::FontSample(FT_Face face) : face(face) {
 }
 
 FontSample::~FontSample() {
-    if(face) FT_Done_Face(face);
+
 }
 
 void FontSample::loadCharset() {
@@ -41,13 +45,43 @@ void FontSample::loadCharset() {
     FT_ULong charcode = FT_Get_First_Char(face, &glyph_index);
 
     while (glyph_index != 0) {
-        charind.emplace(charcode, charset.size());
-        charset.push_back(static_cast<uint32_t>(charcode));
+        uint32_t index = static_cast<uint32_t>(charset.size());
+
+        charset.push_back({charcode, glyph_index}), 
+        charind.emplace(charcode, index);
         charcode = FT_Get_Next_Char(face, charcode, &glyph_index);
     }
 }
+
+void FontSample::loadGlyphs(FontInfo& fontInfo) {
+    FT_Set_Pixel_Sizes(face, 0, fontInfo.pxHeight);
+    for(int i = 0; i < charset.size(); i++) {
+        uint32_t glyph_index = charset[i].second;
+
+        FT_Load_Glyph(face, glyph_index, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING);
+        fontInfo.infoGlyphs.emplace_back(
+            face->glyph->advance.x >> 6,
+            face->glyph->advance.y >> 6
+        );
+    }
+}
+
+int FontSample::getKerning(const FontInfo& fontInfo, char32_t prevChar, char32_t nextChar) {
+    FT_Set_Pixel_Sizes(face, 0, fontInfo.pxHeight);
+
+    FT_Vector delta;
+    FT_Get_Kerning(
+        face, 
+        charset[getCharIndex(prevChar)].second, 
+        charset[getCharIndex(nextChar)].second, 
+        FT_KERNING_DEFAULT, 
+        &delta
+    );
+
+    return delta.x >> 6; // to px
+}
  
-uint32_t FontSample::getIndex(char32_t character) {
+uint32_t FontSample::getCharIndex(char32_t character) {
     return charind[character];
 }
 
@@ -76,8 +110,8 @@ void FontSample::toBitmap(const FontInfo& fontInfo, AtlasBitmap& bitmap) {
     AtlasDescriptor atlasDesc(2048, 2048, 2, 2);
     bitmap.create(atlasDesc);
 
-    for(uint32_t c : charset) {
-        if(FT_Load_Char(face, c, FT_LOAD_RENDER)) continue;
+    for(auto& [charcode, glyph_index] : charset) {
+        if(FT_Load_Char(face, charcode, FT_LOAD_RENDER)) continue;
     
         FT_GlyphSlot g = face->glyph;
         Texture2D glyphImage(g);

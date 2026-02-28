@@ -9,12 +9,19 @@
 
 #include "Atlas.hpp"
 
+struct GlyphInfo {
+    int advance_x;
+    int advance_y;
+};
+
 struct FontInfo {
     uint32_t pxHeight = 64;
     float scale = 1.0f;
     int ascender;
     int descender;
     int lineGap;
+
+    std::vector<GlyphInfo> infoGlyphs;
 };
 
 class FontSample {
@@ -22,8 +29,9 @@ class FontSample {
     std::string path;
     std::string familyName;
     std::string style;
-    std::vector<uint32_t> charset;
-    std::unordered_map<uint32_t, uint32_t> charind;
+
+    std::vector<std::pair<uint32_t, uint32_t>> charset;
+    std::unordered_map<char32_t, uint32_t> charind;
 
     friend class FontHandler;
 
@@ -33,22 +41,26 @@ public:
     ~FontSample();
 
     void toBitmap(const FontInfo& fontInfo, AtlasBitmap& bitmap);
-    uint32_t getIndex(char32_t character);
+    void loadGlyphs(FontInfo& fontInfo);
+
+    int getKerning(const FontInfo& fontInfo, char32_t prevChar, char32_t nextChar);
+
+    uint32_t getCharIndex(char32_t character);
 };
 
 class Font {
     AtlasBitmap atlasBitmap;
-    FontInfo info;
+    FontInfo info_;
 
     FontSample* sample_;
+    
+    friend class Text;
 public:
     Font(FontSample *sample_);
 
     FontSample* sample() {return sample_;}    
     AtlasBitmap& bitmap() {return atlasBitmap;};
-
-    void setPixelSize(uint32_t px_h);
-    void scale(float value);
+    FontInfo& info() {return info_;}
     
     void update();
 };
@@ -60,6 +72,7 @@ class Text {
     std::u32string content;
 public:
     Text(Font* font, std::u32string content = U"");
+    
 
     std::u32string_view getContent() {return content;}
     Font* getFont() {return font;}

@@ -241,7 +241,7 @@ void Engine::loadModels() {
 	model->mesh = std::make_shared<GPUMesh>(device, meshInstance);
 
 	// FONT LOADING //
-	std::string utf8text = "Test Text in Vulkan API.";
+	std::string utf8text = "Hello World in Vulkan API. ";
 	std::u32string u32text = std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t>{}.from_bytes(utf8text);
 
 	FontSample* sample = fontHandler.getFontSample("Times");
