@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Window.hpp"
+#include <stack>
 
 typedef unsigned int uint;
 
@@ -15,6 +16,8 @@ public:
 	static float y;
 	static bool _cursor_locked;
 	static bool _cursor_started;
+
+	static std::stack<uint32_t> pressed_codepoints;
 
 	static int init(GLFWwindow* window);
 	static void pullEvents();

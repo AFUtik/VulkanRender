@@ -13,14 +13,21 @@ AtlasDescriptor::AtlasDescriptor(int atlasWidth, int atlasHeight, int padding_x,
 }
 
 void AtlasDescriptor::insert(Texture2D* texture) {
-    rects.push_back({stbrp_rect{index, texture->width + padding_x, texture->height + padding_y}});
+    rects.push_back({stbrp_rect{index, texture->width + padding_x, texture->height + padding_y*2}});
     images.push_back(texture);
 
     index++;
 }
 
 void AtlasDescriptor::packAll() {
-    stbrp_pack_rects(&context, rects.data(), rects.size());
+    int packed = stbrp_pack_rects(&context, rects.data(), rects.size());
+    if(!packed) { // Rescaling atlas //
+        width *=2;
+        height*=2;
+        nodes.resize(width);
+        stbrp_init_target(&context, width, height, nodes.data(), width);
+        stbrp_pack_rects(&context, rects.data(), rects.size());
+    }
 }
 
 stbrp_rect AtlasDescriptor::pack(Texture2D* texture) {
@@ -37,7 +44,8 @@ void AtlasBitmap::create(AtlasDescriptor& atlasDesc) {
         height = atlasDesc.height;
         pixels = new uint8_t[atlasDesc.width*atlasDesc.height*4];
         channels = 4;
-    }
+    } else tiles.clear();
+    
     padding_x = atlasDesc.padding_x;
     padding_y = atlasDesc.padding_y;
 

@@ -10,71 +10,68 @@
 #include "Atlas.hpp"
 
 struct GlyphInfo {
-    int advance_x;
-    int advance_y;
+    int advance_x = 0;
+    int bearing_x = 0;
+    int bearing_y = 0;
 };
 
-struct FontInfo {
-    uint32_t pxHeight = 64;
-    float scale = 1.0f;
-    int ascender;
-    int descender;
-    int lineGap;
+struct FontData {
+    FT_Face face = nullptr;
+    AtlasBitmap bitmap;
 
+    uint32_t pxHeight = 32;
+    float scale = 1.0f;
+    int baseline_y = 0;
+    
     std::vector<GlyphInfo> infoGlyphs;
 };
 
 class FontSample {
-    FT_Face face = nullptr;
+    FT_Library library;
+    std::vector<uint8_t> fontBuffer;
+    std::vector<std::pair<uint32_t, uint32_t>> charset;
+    std::unordered_map<char32_t, uint32_t> charind;
+
     std::string path;
     std::string familyName;
     std::string style;
 
-    std::vector<std::pair<uint32_t, uint32_t>> charset;
-    std::unordered_map<char32_t, uint32_t> charind;
-
     friend class FontHandler;
 
+    void readFont();
     void loadCharset();
+
 public:
-    FontSample(FT_Face face);
+    FontSample(FT_Library library, std::string_view path);
     ~FontSample();
+    
+    void create(FontData& data);
+    void rasterize(FontData& data);
 
-    void toBitmap(const FontInfo& fontInfo, AtlasBitmap& bitmap);
-    void loadGlyphs(FontInfo& fontInfo);
-
-    int getKerning(const FontInfo& fontInfo, char32_t prevChar, char32_t nextChar);
-
+    uint32_t getGlyphIndex(char32_t character);
     uint32_t getCharIndex(char32_t character);
 };
 
-class Font {
-    AtlasBitmap atlasBitmap;
-    FontInfo info_;
-
-    FontSample* sample_;
+struct Font {
+    FontData fontData;
+    FontSample* sample;
     
-    friend class Text;
-public:
     Font(FontSample *sample_);
+    ~Font();
 
-    FontSample* sample() {return sample_;}    
-    AtlasBitmap& bitmap() {return atlasBitmap;};
-    FontInfo& info() {return info_;}
-    
-    void update();
+    FT_Vector getKerning(char32_t prevChar, char32_t nextChar);
 };
 
 class Text {
     Font* font;
-    int pen_x = 0;
-    int pen_y = 0;
     std::u32string content;
+
+    uint32_t widthBox;
+    uint32_t heightBox;
 public:
     Text(Font* font, std::u32string content = U"");
     
-
-    std::u32string_view getContent() {return content;}
+    std::u32string& getContent() {return content;}
     Font* getFont() {return font;}
 };
 
@@ -92,9 +89,6 @@ public:
     ~FontHandler();
 
     // void reload(); 
-
-    void loadFromDisk(const std::string &fontname, const std::string &path);
-    void loadFromMemory(const std::string &fontname, const std::vector<uint8_t> buffer);
-
-    FontSample* getFontSample(const std::string& fontname);
+    FontSample* createSample(std::string_view fontname, std::string_view path);
+    FontSample* getSample(const std::string &fontname);
 };

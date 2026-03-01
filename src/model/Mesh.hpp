@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <vector>
 
 class Text;
@@ -32,12 +33,16 @@ public:
 
 class TextMesh : public MeshInstance {
     Text* text = nullptr;
-    int pen_x = 100;
-    int pen_y = 900;
+    std::u32string meshContent;
+
+    int pen_x = 0;
+    int pen_y = 0;
 
     void buildVertices();
 public:
     TextMesh(Text* text);
+
+    void build();
 };
 
 }

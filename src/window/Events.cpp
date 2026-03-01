@@ -12,6 +12,7 @@ float Events::x = 0.0f;
 float Events::y = 0.0f;
 bool Events::_cursor_locked = false;
 bool Events::_cursor_started = false;
+std::stack<uint32_t> Events::pressed_codepoints;
 
 #define _MOUSE_BUTTONS 1024
 
@@ -49,6 +50,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 }
 
+void char_callback(GLFWwindow* window, uint32_t codepoint) {
+	Events::pressed_codepoints.push(codepoint);
+}
+
 int Events::init(GLFWwindow *window){
 	_keys = new bool[1032];
 	_frames = new uint[1032];
@@ -57,6 +62,7 @@ int Events::init(GLFWwindow *window){
 	memset(_frames, 0, 1032*sizeof(uint));
 
 	glfwSetKeyCallback(window, key_callback);
+	glfwSetCharCallback(window, char_callback);
 	glfwSetMouseButtonCallback(window, mouse_button_callback);
 	glfwSetCursorPosCallback(window, cursor_position_callback);
 	return 0;

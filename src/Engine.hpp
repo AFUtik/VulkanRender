@@ -35,12 +35,17 @@ namespace myvk {
 		void createGlobalLayouts();
 		void createUILayouts();
 		void loadModels();
+		
+		
 
 		Window window{ WIDTH, HEIGHT, "Vulkan Engine" };
 		Device device{ window };
 		Renderer renderer{ window, device };
 
 		FontHandler fontHandler;
+
+		std::unique_ptr<Font> curFont = nullptr;
+		std::unique_ptr<Text> curText = nullptr;
 
 		Camera camera;
 

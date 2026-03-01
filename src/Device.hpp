@@ -16,7 +16,7 @@ namespace myvk {
         //std::mutex mtx;
 
 		DeletionQueue() = default;
-		~DeletionQueue() {flush();}
+		~DeletionQueue() {}
 
 		DeletionQueue(const DeletionQueue&) = delete;
     	DeletionQueue& operator=(const DeletionQueue&) = delete;

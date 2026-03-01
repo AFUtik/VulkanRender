@@ -8,9 +8,16 @@
 #include <vma/vk_mem_alloc.h>
 
 namespace myvk {
+    enum class TextureFilter {
+        Linear,
+        Nearest,
+        LinearMipmap,
+        NearestMipmap
+    };
+
     class GPUTexture {
     public:
-        GPUTexture(Device& device, Texture2D& texture);
+        GPUTexture(Device& device, Texture2D& texture, TextureFilter filter = TextureFilter::Linear);
         ~GPUTexture();
 
         GPUTexture(const GPUTexture&) = delete;
@@ -37,6 +44,8 @@ namespace myvk {
 
         bool isCubemap = false;
         int imageWidth, imageHeight, imageChannels;
+
+        TextureFilter filter;
 
         VkFormat format;
         VkImage image;

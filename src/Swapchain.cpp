@@ -40,6 +40,8 @@ namespace myvk {
     }
 
     SwapChain::~SwapChain() {
+        vkDeviceWaitIdle(device.device()); 
+
         for (auto imageView : swapChainImageViews) {
             vkDestroyImageView(device.device(), imageView, nullptr);
         }
@@ -66,6 +68,7 @@ namespace myvk {
             vkDestroySemaphore(device.device(), renderFinishedSemaphores[i], nullptr);
             vkDestroySemaphore(device.device(), imageAvailableSemaphores[i], nullptr);
             vkDestroyFence(device.device(), inFlightFences[i], nullptr);
+            delQueues[i].flush();
         }
     }
 

@@ -1,4 +1,5 @@
 #include "GPUTexture.hpp"
+#include "vulkan/vulkan_core.h"
 
 
 #include <stdexcept>
@@ -43,21 +44,32 @@ bool HasStencilComponent(VkFormat Format)
 		    (Format == VK_FORMAT_D24_UNORM_S8_UINT));
 }
 
-GPUTexture::GPUTexture(Device& device, Texture2D& texture) : 
+GPUTexture::GPUTexture(Device& device, Texture2D& texture, TextureFilter filter) : 
 	device(device),
 	imageWidth(texture.width),
 	imageHeight(texture.height),
-	imageChannels(texture.channels)
+	imageChannels(texture.channels),
+	filter(filter)
 {
     createGPUTexture(texture);
 }
 
 GPUTexture::~GPUTexture() {
-	device.getDeletionQueue().push_function([this]() {
-		vkDestroySampler(device.device(), sampler, nullptr);
-    	vkDestroyImageView(device.device(), view, nullptr);
-    	vmaDestroyImage(device.allocator(), image, vmaAllocation);
-	});
+	VkDevice vkdevice = device.device();
+	VkSampler vksampler = sampler;
+	VkImageView vkview = view;
+	VkImage vkimage = image;
+
+	VmaAllocator vmaAllocator = device.allocator();
+	VmaAllocation vmaAlloc = vmaAllocation;
+
+	device.getDeletionQueue().push_function(
+		[vkdevice, vksampler, vkview, vkimage, vmaAlloc, vmaAllocator]() {
+			vkDestroySampler(vkdevice, vksampler, nullptr);
+    		vkDestroyImageView(vkdevice, vkview, nullptr);
+    		vmaDestroyImage(vmaAllocator, vkimage, vmaAlloc);
+		}
+	);
 }
 
 // Copied from the "3D Graphics Rendering Cookbook"
@@ -236,8 +248,16 @@ void GPUTexture::createGPUTextureFromData(const void* pPixels)
 	VkImageAspectFlags AspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
 	createImageView(AspectFlags);
 
-	VkFilter MinFilter = VK_FILTER_LINEAR;
-	VkFilter MaxFilter = VK_FILTER_LINEAR;
+	VkFilter MinFilter;
+	VkFilter MaxFilter;
+	if(filter == TextureFilter::Linear) {
+		MinFilter = VK_FILTER_LINEAR;
+		MaxFilter = VK_FILTER_LINEAR;
+	} else if(filter == TextureFilter::Nearest) {
+		MinFilter = VK_FILTER_NEAREST;
+		MaxFilter = VK_FILTER_NEAREST;
+	}
+	
 	VkSamplerAddressMode AddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 
 	// Step #3: create the GPUTexture sampler

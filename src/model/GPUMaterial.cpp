@@ -4,14 +4,12 @@ namespace myvk {
 
 GPUMaterial::GPUMaterial(DescriptorPool& pool,
                    DescriptorSetLayout& layout,
-                   std::shared_ptr<GPUTexture> albedo) : albedo(albedo)
+                   std::shared_ptr<GPUTexture> albedo) : pool(pool), layout(layout), albedo(albedo)
 {
-   create(pool, layout, albedo);
+   create(albedo);
 }
 
-void GPUMaterial::create(DescriptorPool& pool,
-                DescriptorSetLayout& layout,
-                std::shared_ptr<GPUTexture> albedo) 
+void GPUMaterial::create(std::shared_ptr<GPUTexture> albedo) 
 {
     VkDescriptorImageInfo imageInfo;
 	if(albedo) {

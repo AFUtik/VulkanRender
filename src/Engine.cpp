@@ -9,6 +9,7 @@
 #include "model/Mesh.hpp"
 #include "model/Texture.hpp"
 #include "vulkan/vulkan_core.h"
+#include "window/Events.hpp"
 
 #include <memory>
 #include <string>
@@ -45,7 +46,7 @@ Engine::Engine() : camera(window.width, window.height, glm::dvec3(0, 0, 5), glm:
 }
 
 Engine::~Engine() {
-
+	
 }
 
 void Engine::createGlobalLayouts() {
@@ -143,6 +144,7 @@ void Engine::run() {
 	const double speed = 2.0;
 	float camX = 0.0f;
 	float camY = 0.0f;
+	bool writingActive = false;
 	while (!window.isShouldClose()) {
 		double currentTime = glfwGetTime();
 		double frameTime = currentTime - lastTime;
@@ -163,7 +165,7 @@ void Engine::run() {
 				camera.translate(-camera.xdir() * H * speed);
 			}
 			if (Events::pressed(GLFW_KEY_TAB)) {
-				Events::toggle_cursor(&window);
+				writingActive=!writingActive;
 			}
 
 			if (Events::_cursor_locked) {
@@ -183,6 +185,18 @@ void Engine::run() {
 
 			if (auto commandBuffer = renderer.beginFrame()) {
 				renderer.beginSwapChainRenderPass(commandBuffer);
+
+				if(writingActive) {
+					while(!Events::pressed_codepoints.empty()) {
+						uint32_t codepoint = Events::pressed_codepoints.top(); Events::pressed_codepoints.pop();
+
+						curText->getContent().push_back(codepoint);
+						TextMesh mesh(curText.get());
+						textModel->mesh = std::make_shared<GPUMesh>(device, mesh);
+					}
+
+					
+				}
 
 				int frameIndex = renderer.getFrameIndex();
 				FrameInfo frameInfo{
@@ -241,18 +255,19 @@ void Engine::loadModels() {
 	model->mesh = std::make_shared<GPUMesh>(device, meshInstance);
 
 	// FONT LOADING //
-	std::string utf8text = "Hello World in Vulkan API. ";
+	std::string utf8text = "Простой текст в Vulkan API. ";
 	std::u32string u32text = std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t>{}.from_bytes(utf8text);
 
-	FontSample* sample = fontHandler.getFontSample("Times");
-	Font font(sample);
-	Text text(&font, u32text);
+	FontSample* sample = fontHandler.getSample("Times");
+	curFont = std::make_unique<Font>(sample);
+	curText = std::make_unique<Text>(curFont.get(), u32text);
 
 	// TEXT MESH CREATING //
 	textModel = std::make_shared<Model>();
-	TextMesh textMesh(&text);
+	textModel->transform.translate({100.0, 900.0, 0.0});
+	TextMesh textMesh(curText.get());
 	
-	std::shared_ptr<GPUTexture> bitmapFontGPU = std::make_shared<GPUTexture>(device, text.getFont()->bitmap());
+	std::shared_ptr<GPUTexture> bitmapFontGPU = std::make_shared<GPUTexture>(device, curText->getFont()->fontData.bitmap, TextureFilter::Nearest);
 	textModel->material = std::make_shared<GPUMaterial>(*globalPool, *uiMaterialSetLayout, bitmapFontGPU);
 	textModel->mesh = std::make_shared<GPUMesh>(device, textMesh);
 }
