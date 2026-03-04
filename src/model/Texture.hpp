@@ -12,7 +12,6 @@ public:
     
     Texture2D(uint8_t* ptr, int width, int height, int channels);
     Texture2D(std::string path);
-    Texture2D(FT_GlyphSlot g);
 
     Texture2D() {};
     ~Texture2D() ;

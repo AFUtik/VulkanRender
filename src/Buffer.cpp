@@ -14,6 +14,10 @@
 
 namespace myvk {
 
+Buffer::DeletionInfo Buffer::getDeletionInfo() {
+  return Buffer::DeletionInfo{buffer, device.allocator(), vmaAllocation};
+}
+
 /**
  * Returns the minimum instance size required to be compatible with devices minOffsetAlignment
  *
@@ -54,13 +58,10 @@ Buffer::~Buffer() {
 
   if (buffer == VK_NULL_HANDLE) return;
 
-  VmaAllocator alloc = device.allocator();
-  VkBuffer buf = buffer;
-  VmaAllocation allocHandle = vmaAllocation;
-
+  auto info = getDeletionInfo();
   device.getDeletionQueue().push_function(
-    [alloc, buf, allocHandle]() {
-      vmaDestroyBuffer(alloc, buf, allocHandle);
+    [info]() {
+      vmaDestroyBuffer(info.allocator, info.buffer, info.allocation);
     }
   );
   //vkDestroyBuffer(device.device(), buffer, nullptr);

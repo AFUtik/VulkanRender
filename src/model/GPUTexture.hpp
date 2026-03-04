@@ -17,6 +17,16 @@ namespace myvk {
 
     class GPUTexture {
     public:
+        struct DeletionInfo {
+            VkDevice device;
+            VkSampler sampler;
+            VkImageView view;
+            VkImage image;
+
+            VmaAllocator allocator;
+            VmaAllocation allocation;
+        };
+
         GPUTexture(Device& device, Texture2D& texture, TextureFilter filter = TextureFilter::Linear);
         ~GPUTexture();
 
@@ -26,6 +36,8 @@ namespace myvk {
         VkSampler getSampler() {return sampler;}
         VkImageView getView() {return view;}
     private:
+        GPUTexture::DeletionInfo getDeletionInfo();
+
         void imageMemBarrier(VkCommandBuffer CmdBuf, VkImageLayout OldLayout, VkImageLayout NewLayout, int layerCount);
         
         void transitionImageLayout(VkImageLayout OldLayout, VkImageLayout NewLayout, int LayerCount);

@@ -44,6 +44,17 @@ bool HasStencilComponent(VkFormat Format)
 		    (Format == VK_FORMAT_D24_UNORM_S8_UINT));
 }
 
+GPUTexture::DeletionInfo GPUTexture::getDeletionInfo() {
+	return GPUTexture::DeletionInfo{
+		device.device(),
+		sampler,
+		view,
+		image,
+		device.allocator(),
+		vmaAllocation
+	};
+}
+
 GPUTexture::GPUTexture(Device& device, Texture2D& texture, TextureFilter filter) : 
 	device(device),
 	imageWidth(texture.width),
@@ -55,19 +66,12 @@ GPUTexture::GPUTexture(Device& device, Texture2D& texture, TextureFilter filter)
 }
 
 GPUTexture::~GPUTexture() {
-	VkDevice vkdevice = device.device();
-	VkSampler vksampler = sampler;
-	VkImageView vkview = view;
-	VkImage vkimage = image;
-
-	VmaAllocator vmaAllocator = device.allocator();
-	VmaAllocation vmaAlloc = vmaAllocation;
-
+	auto info = getDeletionInfo();
 	device.getDeletionQueue().push_function(
-		[vkdevice, vksampler, vkview, vkimage, vmaAlloc, vmaAllocator]() {
-			vkDestroySampler(vkdevice, vksampler, nullptr);
-    		vkDestroyImageView(vkdevice, vkview, nullptr);
-    		vmaDestroyImage(vmaAllocator, vkimage, vmaAlloc);
+		[info]() {
+			vkDestroySampler(info.device, info.sampler, nullptr);
+    		vkDestroyImageView(info.device, info.view, nullptr);
+    		vmaDestroyImage(info.allocator, info.image, info.allocation);
 		}
 	);
 }
