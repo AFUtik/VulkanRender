@@ -27,7 +27,7 @@ namespace myvk {
             VmaAllocation allocation;
         };
 
-        GPUTexture(Device& device, Texture2D& texture, TextureFilter filter = TextureFilter::Linear);
+        GPUTexture(Device& device, Texture2D* texture, TextureFilter filter = TextureFilter::Linear);
         ~GPUTexture();
 
         GPUTexture(const GPUTexture&) = delete;
@@ -52,12 +52,14 @@ namespace myvk {
 
         void createGPUTextureFromData(const void* pPixels);
 
-		void createGPUTexture(Texture2D& texture);
+		void createGPUTexture(Texture2D* texture);
 
         bool isCubemap = false;
         int imageWidth, imageHeight, imageChannels;
 
+        // cpu texture info //
         TextureFilter filter;
+        TextureChannels channels;
 
         VkFormat format;
         VkImage image;

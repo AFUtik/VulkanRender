@@ -1,6 +1,8 @@
 #include "Atlas.hpp"
 #include "model/Texture.hpp"
 #include <iostream>
+#include <memory>
+#include <stdexcept>
 
 AtlasDescriptor::AtlasDescriptor(int atlasWidth, int atlasHeight, int padding_x, int padding_y) :
     width(atlasWidth), 
@@ -37,19 +39,13 @@ stbrp_rect AtlasDescriptor::pack(Texture2D* texture) {
     return rect;
 }
 
-void AtlasBitmap::create(AtlasDescriptor& atlasDesc) {
-    if(!pixels) {
-        tiles.resize(atlasDesc.width);
-        width  = atlasDesc.width;
-        height = atlasDesc.height;
-        pixels = new uint8_t[atlasDesc.width*atlasDesc.height*4];
-        channels = 4;
-    } else tiles.clear();
-    
-    padding_x = atlasDesc.padding_x;
-    padding_y = atlasDesc.padding_y;
-
-    pasteImages(atlasDesc.rects, atlasDesc.images);
+AtlasBitmap::AtlasBitmap(AtlasDescriptor& desc, TextureChannels atlasChannels) 
+    : Texture2D(desc.width, desc.height, atlasChannels), 
+    padding_x(desc.padding_x),
+    padding_y(desc.padding_y)
+{
+    tiles.resize(desc.width);
+    pasteImages(desc.rects, desc.images);
 }
 
 void AtlasBitmap::addPadding(const stbrp_rect& rect) {
@@ -57,22 +53,22 @@ void AtlasBitmap::addPadding(const stbrp_rect& rect) {
     uint32_t srcH = rect.h - padding_y*2;
 
     // VERTICAL BOTTOM PADDING //
-    const uint8_t* bottomToCopy = pixelPtr(rect.x, rect.y + srcH-1 + padding_y);
+    const uint8_t* bottomToCopy = ptr(rect.x, rect.y + srcH-1 + padding_y);
     for (int i = 0; i < padding_y; i++)
     {
         memcpy(
-            pixelPtr(rect.x, rect.y + srcH + padding_y + i),
+            ptr(rect.x, rect.y + srcH + padding_y + i),
             bottomToCopy,
             srcW * channels
         );
     }
 
     // VERTICAL UPPER PADDING //
-    const uint8_t* upToCopy = pixelPtr(rect.x, rect.y + padding_y);
+    const uint8_t* upToCopy = ptr(rect.x, rect.y + padding_y);
     for (int i = 0; i < padding_y; i++)
     {
         memcpy(
-            pixelPtr(rect.x, rect.y + i),
+            ptr(rect.x, rect.y + i),
             upToCopy,
             srcW * channels
         );
@@ -80,20 +76,12 @@ void AtlasBitmap::addPadding(const stbrp_rect& rect) {
 
     // HORIZONTAL RIGHT PADDING //
     for (int i = 0; i < srcH; i++) {
-        uint32_t* dst =
-            reinterpret_cast<uint32_t*>(
-                pixelPtr(rect.x + srcW,
-                        rect.y + i));
-
-        uint32_t* src =
-            reinterpret_cast<uint32_t*>(
-                pixelPtr(rect.x + srcW - 1,
-                        rect.y + i));
-
-        for (uint32_t p = 0; p < padding_x; p++) {
+        uint8_t* dst = ptr(rect.x + srcW,rect.y + i);
+        uint8_t* src = ptr(rect.x + srcW - 1,rect.y + i);
+        for (int p = 0; p < padding_x; p++) {
             dst[p] = *src;
+        }
     }
-}
 }
 
 void AtlasBitmap::pasteImages(std::vector<stbrp_rect> &rects, std::vector<Texture2D*> &images) {
@@ -103,7 +91,7 @@ void AtlasBitmap::pasteImages(std::vector<stbrp_rect> &rects, std::vector<Textur
 void AtlasBitmap::extend(const stbrp_rect& rect, Texture2D* texture) {
     if (!rect.was_packed) return;
 
-    pasteGrayscale(texture, rect.x, rect.y + padding_y);
+    TextureUtils::transfer(this, texture, rect.x, rect.y + padding_y);
     addPadding(rect);
 
     Tile& t = tiles[rect.id];

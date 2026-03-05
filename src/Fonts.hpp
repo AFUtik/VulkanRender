@@ -15,14 +15,9 @@ struct GlyphInfo {
     int bearing_y = 0;
 };
 
-class GlyphTexture : public Texture2D {
-public:
-    GlyphTexture(FT_GlyphSlot g);
-};
-
 struct FontData {
     FT_Face face = nullptr;
-    AtlasBitmap bitmap;
+    std::unique_ptr<AtlasBitmap> bitmap;
 
     uint32_t pxHeight = 32;
     float scale = 1.0f;

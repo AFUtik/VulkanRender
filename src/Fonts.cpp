@@ -89,7 +89,6 @@ void FontSample::create(FontData& data) {
 }
 
 void FontSample::rasterize(FontData& data) {
-    AtlasBitmap& bitmap = data.bitmap;
     AtlasDescriptor atlasDesc(2048, 2048, 2, 2);
 
     std::vector<Texture2D> textures;
@@ -103,13 +102,17 @@ void FontSample::rasterize(FontData& data) {
         glyph.bearing_x = g->bitmap_left;
         glyph.bearing_y = g->bitmap_top;
 
-        textures.emplace_back(g);
-
+        textures.emplace_back(
+            (const uint8_t*)g->bitmap.buffer, // copies glyph buffer //
+            (int)g->bitmap.width, 
+            (int)g->bitmap.rows,
+            TextureChannels::Grayscale // alpha channel //
+        );
         atlasDesc.insert(&textures.back());
         i++;
     }
     atlasDesc.packAll();
-    bitmap.create(atlasDesc);
+    data.bitmap = std::make_unique<AtlasBitmap>(atlasDesc, TextureChannels::Grayscale);
 }
 
 void FontSample::loadCharset() {

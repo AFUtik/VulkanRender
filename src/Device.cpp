@@ -58,6 +58,8 @@ namespace myvk {
     }
 
     Device::~Device() {
+        vkDeviceWaitIdle(device_);
+
         vkDestroyCommandPool(device_, commandPool, nullptr);
         vkDestroyDevice(device_, nullptr);
 

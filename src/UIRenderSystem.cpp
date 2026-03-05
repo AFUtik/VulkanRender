@@ -1,9 +1,9 @@
 #include "UIRenderSystem.hpp"
-#include "RenderSystem.hpp"
 
 namespace myvk {
 
-UIRenderSystem::UIRenderSystem(Device &device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts) : RenderSystem(device)
+UIRenderSystem::UIRenderSystem(Device &device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts, GUIContext* context) : 
+	RenderSystem(device), guiRender(std::make_unique<GUIRender>(context))
 {
     createPipelineLayout(layouts);
 
@@ -19,6 +19,10 @@ UIRenderSystem::UIRenderSystem(Device &device, VkRenderPass renderPass, std::vec
 	config.colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
 	config.colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
 	createPipeline(renderPass, config);
+}
+
+void UIRenderSystem::renderGUI(FrameInfo& frameInfo) {
+	
 }
 
 }

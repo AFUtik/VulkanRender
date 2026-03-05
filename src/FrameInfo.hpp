@@ -1,11 +1,9 @@
 #pragma once
 
 #include "Camera.hpp"
+#include <vulkan/vulkan.h>
 
 namespace myvk {
-
-// lib
-#include <vulkan/vulkan.h>
 
 struct FrameInfo {
     int frameIndex;

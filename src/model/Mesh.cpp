@@ -19,7 +19,7 @@ void TextMesh::buildVertices() {
     indCount = 0;
 
     Font* font = text->getFont();
-    AtlasBitmap& atlasBitmap = font->fontData.bitmap;
+    AtlasBitmap* atlasBitmap = font->fontData.bitmap.get();
 
     pen_y = font->fontData.baseline_y;
 
@@ -35,7 +35,7 @@ void TextMesh::buildVertices() {
             pen_x += kerning.x;
         }
 
-        const Tile& tile = atlasBitmap.getTile(index);
+        const Tile& tile = atlasBitmap->getTile(index);
 
         float x = static_cast<float>(pen_x + glyph.bearing_x);
         float y = static_cast<float>(pen_y - (tile.height - glyph.bearing_y));

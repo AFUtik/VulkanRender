@@ -248,7 +248,7 @@ void Engine::loadModels() {
 
 	Texture2D texture("C:/cplusplus/VulkanRender/VulkanRender/resources/img/green.png");
 
-	std::shared_ptr<GPUTexture> gpuTexture = std::make_shared<GPUTexture>(device, texture);
+	std::shared_ptr<GPUTexture> gpuTexture = std::make_shared<GPUTexture>(device, &texture);
 	model->material = std::make_shared<GPUMaterial>(*globalPool, *materialSetLayout, gpuTexture);
 	model->mesh = std::make_shared<GPUMesh>(device, meshInstance);
 
@@ -264,8 +264,9 @@ void Engine::loadModels() {
 	textModel = std::make_shared<Model>();
 	textModel->transform.translate({100.0, 900.0, 0.0});
 	TextMesh textMesh(curText.get());
+	TextureUtils::save(curText->getFont()->fontData.bitmap.get(), absolutePath+"resources/img/bitmap.bmp");
 	
-	std::shared_ptr<GPUTexture> bitmapFontGPU = std::make_shared<GPUTexture>(device, curText->getFont()->fontData.bitmap, TextureFilter::Nearest);
+	std::shared_ptr<GPUTexture> bitmapFontGPU = std::make_shared<GPUTexture>(device, curText->getFont()->fontData.bitmap.get(), TextureFilter::Nearest);
 	textModel->material = std::make_shared<GPUMaterial>(*globalPool, *uiMaterialSetLayout, bitmapFontGPU);
 	textModel->mesh = std::make_shared<GPUMesh>(device, textMesh, GPUMeshBufferFlags::CreateWithReserve);
 }

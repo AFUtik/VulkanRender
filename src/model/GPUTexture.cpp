@@ -1,6 +1,4 @@
 #include "GPUTexture.hpp"
-#include "vulkan/vulkan_core.h"
-
 
 #include <stdexcept>
 
@@ -55,12 +53,13 @@ GPUTexture::DeletionInfo GPUTexture::getDeletionInfo() {
 	};
 }
 
-GPUTexture::GPUTexture(Device& device, Texture2D& texture, TextureFilter filter) : 
+GPUTexture::GPUTexture(Device& device, Texture2D* texture, TextureFilter filter) : 
 	device(device),
-	imageWidth(texture.width),
-	imageHeight(texture.height),
-	imageChannels(texture.channels),
-	filter(filter)
+	imageWidth(texture->width),
+	imageHeight(texture->height),
+	imageChannels(texture->channels),
+	filter(filter),
+	channels((TextureChannels)texture->channels)
 {
     createGPUTexture(texture);
 }
@@ -235,9 +234,24 @@ void GPUTexture::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout ne
 	device.endSingleTimeCommands(m_copyCmdBuf);
 }
 
-void GPUTexture::createGPUTexture(Texture2D& texture) {
-	format = VK_FORMAT_R8G8B8A8_SRGB;
-	createGPUTextureFromData(texture.raw());
+void GPUTexture::createGPUTexture(Texture2D* texture) {
+	if(channels == TextureChannels::RGBA) 
+	{
+		format = VK_FORMAT_R8G8B8A8_SRGB;
+	} 
+	else if(channels == TextureChannels::RGB) 
+	{
+		format = VK_FORMAT_R8G8B8_SRGB;
+	}
+	else if(channels == TextureChannels::Grayscale) 
+	{
+		format = VK_FORMAT_R8_UNORM;
+	}
+	else if (channels == TextureChannels::GrayscaleAlpha) 
+	{
+		format = VK_FORMAT_R8G8_UNORM;
+	}
+	createGPUTextureFromData(texture->raw());
 }
 
 void GPUTexture::createGPUTextureFromData(const void* pPixels)
@@ -357,7 +371,7 @@ void GPUTexture::createGPUTextureSampler(VkFilter MinFilter, VkFilter MaxFilter,
 
 void GPUTexture::createImageView(VkImageAspectFlags AspectFlags) 
 {
-	VkImageViewCreateInfo ViewInfo =
+	VkImageViewCreateInfo viewInfo =
 	{
 		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
 		.pNext = NULL,
@@ -365,12 +379,6 @@ void GPUTexture::createImageView(VkImageAspectFlags AspectFlags)
 		.image = image,
 		.viewType = isCubemap ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D,
 		.format = format,
-		.components = {
-			.r = VK_COMPONENT_SWIZZLE_IDENTITY,
-			.g = VK_COMPONENT_SWIZZLE_IDENTITY,
-			.b = VK_COMPONENT_SWIZZLE_IDENTITY,
-			.a = VK_COMPONENT_SWIZZLE_IDENTITY
-		},
 		.subresourceRange = {
 			.aspectMask = AspectFlags,
 			.baseMipLevel = 0,
@@ -380,7 +388,33 @@ void GPUTexture::createImageView(VkImageAspectFlags AspectFlags)
 		}
 	};
 
-    if(vkCreateImageView(device.device(), &ViewInfo, NULL, &view) != VK_SUCCESS) {
+	// Managing image view channels //
+	if(channels == TextureChannels::RGBA || channels == TextureChannels::RGB) {
+		viewInfo.components = {
+			.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+			.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+			.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+			.a = VK_COMPONENT_SWIZZLE_IDENTITY
+		};
+	}
+	else if(channels == TextureChannels::Grayscale) {
+		viewInfo.components = {
+			.r = VK_COMPONENT_SWIZZLE_ONE,
+			.g = VK_COMPONENT_SWIZZLE_ONE,
+			.b = VK_COMPONENT_SWIZZLE_ONE,
+			.a = VK_COMPONENT_SWIZZLE_R
+		};
+	}
+	else if(channels == TextureChannels::GrayscaleAlpha) {
+		viewInfo.components = {
+			.r = VK_COMPONENT_SWIZZLE_R,
+			.g = VK_COMPONENT_SWIZZLE_R,
+			.b = VK_COMPONENT_SWIZZLE_R,
+			.a = VK_COMPONENT_SWIZZLE_G
+		};
+	}
+
+    if(vkCreateImageView(device.device(), &viewInfo, NULL, &view) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create image view");
     }
 }

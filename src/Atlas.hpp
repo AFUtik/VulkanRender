@@ -50,7 +50,8 @@ private:
     void addPadding(const stbrp_rect& rect);
     void pasteImages(std::vector<stbrp_rect> &rects, std::vector<Texture2D*> &images);
 public:
-    void create(AtlasDescriptor& desc);
+    AtlasBitmap(AtlasDescriptor& desc, TextureChannels atlasChannels);
+    
     void extend(const stbrp_rect& rect, Texture2D* texture);
 
     const Tile& getTile(int index) const;
