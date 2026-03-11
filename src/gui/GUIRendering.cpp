@@ -5,10 +5,9 @@
 namespace myvk {
 
 void GUIWindowRender::buildMesh() {
-    std::shared_ptr<Model> model = std::make_shared<Model>();
+    auto mesh = std::make_shared<Mesh>();
     MeshTools::Quad quad;
 
-    // Window mesh //
     quad.r = window->windowColor.r; 
     quad.g = window->windowColor.g; 
     quad.b = window->windowColor.b; 
@@ -16,11 +15,9 @@ void GUIWindowRender::buildMesh() {
     quad.x2 = (float)window->window.width;
     quad.y2 = (float)window->window.height;
 
-    MeshTools::createQuad(*model->meshInstance.get(), quad);
-    models.push_back(model);
+    MeshTools::createQuad(mesh.get(), quad);
 
-    // Footer model //
-    std::shared_ptr<Model> footerModel = std::make_shared<Model>();
+    // Footer  //
     quad = MeshTools::Quad();
 
     quad.r = window->footerColor.r; 
@@ -30,17 +27,13 @@ void GUIWindowRender::buildMesh() {
     quad.y1 = (float)(window->window.height - window->footer.height);
     quad.x2 = (float)window->window.width;
     quad.y2 = (float)window->window.height;
-    MeshTools::createQuad(*footerModel->meshInstance.get(), quad);
+    MeshTools::createQuad(mesh.get(), quad);
 
-    footerModel->transform.translate({0.0, 0.0, 1.0});
-    models.push_back(footerModel);
-}
-
-void GUIWindowRender::fetchWindow() {
-    for(auto& model : models) {
-        model->transform.setPosition({window->pos.x, window->pos.y, 0.0});
-        //cmodel.model->transform.setZ((float)window->zOrder);
-    }
+    meshWindow = std::make_unique<MeshObject>(mesh, nullptr);
+    windowObjectId = scene->registerObject(meshWindow.get());
+    
+    meshWindow->transform.translate({window->pos.x, window->pos.y, 0.0f});
+    scene->updateTransform(windowObjectId, meshWindow->transform.matrix());
 }
 
 GUIRenderer::GUIRenderer(GUIContext* context) : context(context) {
@@ -48,14 +41,15 @@ GUIRenderer::GUIRenderer(GUIContext* context) : context(context) {
 }
 
 void GUIRenderer::buildDrawList() {
-    for(auto& window : windowToRender) for(auto model : window->models) renderSystem->addToDrawList(model.get());
+    for(auto& window : windowToRender) renderSystem->addToDrawList(window->windowObjectId);
 }
 
 void GUIRenderer::fetchContext() {
     for(std::shared_ptr<GUIWindow>& window : context->windows()) {
         auto windowRender = std::make_unique<GUIWindowRender>();
         windowRender->window = window.get();
-        windowRender->version = window->version;
+        windowRender->scene = renderScene;
+        //windowRender->version = window->version;
         windowRender->buildMesh();
 
         windowToRender.push_back(std::move(windowRender));

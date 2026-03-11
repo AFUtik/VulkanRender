@@ -61,10 +61,11 @@ void Engine::run() {
 
 	UIRenderSystem uiRenderSystem(device, renderer.getSwapChainRenderPass(), globalPool.get(), frameInfo);
 	std::shared_ptr<GUIRenderer> guiRenderer = std::make_shared<GUIRenderer>(&guiContext);
+	uiRenderSystem.registerRenderer(guiRenderer);
+	
 	guiRenderer->fetchContext();
 
-	uiRenderSystem.registerRenderer(guiRenderer);
-
+	
 	GlobalRenderSystem renderSystem(device, renderer.getSwapChainRenderPass(), globalPool.get(), frameInfo);
 
 	Events::toggle_cursor(&window);

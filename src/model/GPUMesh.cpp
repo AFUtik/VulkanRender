@@ -6,34 +6,34 @@
 #include <iostream>
 
 namespace myvk {
-	GPUMesh::GPUMesh(Device& device, Mesh& instance, uint32_t flags) : device(device), flags(flags) {
-		createBuffers(instance);
+	GPUMesh::GPUMesh(Device& device, const Mesh* mesh, uint32_t flags) : device(device), flags(flags) {
+		createBuffers(mesh);
 	}
 
-    void GPUMesh::createBuffers(Mesh& instance) {
-		if(!instance.vertices.capacity()) {
+    void GPUMesh::createBuffers(const Mesh* mesh) {
+		if(!mesh->vertices.capacity()) {
 			throw std::runtime_error("Failed to create gpu buffer: instance data is empty.");
 		}
 
-		vertexCount = static_cast<uint32_t>(instance.vertices.size());
-		indexCount = static_cast<uint32_t>(instance.indices.size());
+		vertexCount = static_cast<uint32_t>(mesh->vertices.size());
+		indexCount = static_cast<uint32_t>(mesh->indices.size());
 
 		bool recreateVertexBuffer = vertexCount > reservedVertexBufferSize;
 		if(recreateVertexBuffer) {
 			reservedVertexBufferSize = (flags & GPUMeshBufferFlags::CreateWithReserve) ? 
-				(uint32_t)instance.vertices.capacity() : 
-				(uint32_t)instance.vertices.size();
+				(uint32_t)mesh->vertices.capacity() : 
+				(uint32_t)mesh->vertices.size();
 		}
 		bool recreateIndexBuffer  = indexCount > reservedIndexBufferSize;
 		if(recreateIndexBuffer) {
 			reservedIndexBufferSize = (flags & GPUMeshBufferFlags::CreateWithReserve) ? 
-				(uint32_t)instance.indices.capacity() : 
-				(uint32_t)instance.indices.size();
+				(uint32_t)mesh->indices.capacity() : 
+				(uint32_t)mesh->indices.size();
 		}
 
 		// VertexBuffer creation //
 		if(vertexCount >= 3) {
-			VkDeviceSize bufferSize = sizeof(instance.vertices[0]) * reservedVertexBufferSize;
+			VkDeviceSize bufferSize = sizeof(mesh->vertices[0]) * reservedVertexBufferSize;
 			if(flags & GPUMeshBufferFlags::CreateOnGPUMemory) { // GPU MEMORY
 				Buffer stagingBuffer(
 					device,
@@ -44,7 +44,7 @@ namespace myvk {
 					VMA_MEMORY_USAGE_CPU_ONLY
 				);
 				stagingBuffer.map();
-				stagingBuffer.writeToBuffer(instance.vertices.data(), bufferSize);
+				stagingBuffer.writeToBuffer(mesh->vertices.data(), bufferSize);
 				stagingBuffer.unmap();
 				
 				if(recreateVertexBuffer) {
@@ -71,7 +71,7 @@ namespace myvk {
 					);
 				}
 				vertexBuffer->map();
-				vertexBuffer->writeToBuffer(instance.vertices.data(), bufferSize);
+				vertexBuffer->writeToBuffer(mesh->vertices.data(), bufferSize);
 				vertexBuffer->unmap();
 			}
 		}
@@ -79,7 +79,7 @@ namespace myvk {
 		// IndexBuffer creation //
 		if(indexCount) {
 			hasIndexBuffer = true;
-			VkDeviceSize bufferSize = sizeof(instance.indices[0]) * reservedIndexBufferSize;
+			VkDeviceSize bufferSize = sizeof(mesh->indices[0]) * reservedIndexBufferSize;
 			if(flags & GPUMeshBufferFlags::CreateOnGPUMemory) { // GPU MEMORY
 				Buffer stagingBuffer(
 					device,
@@ -90,7 +90,7 @@ namespace myvk {
 					VMA_MEMORY_USAGE_CPU_ONLY
 				);
 				stagingBuffer.map();
-				stagingBuffer.writeToBuffer(instance.indices.data(), bufferSize);
+				stagingBuffer.writeToBuffer(mesh->indices.data(), bufferSize);
 				stagingBuffer.unmap();
 
 				if(recreateIndexBuffer) {
@@ -116,15 +116,15 @@ namespace myvk {
 					);
 				}
 				indexBuffer->map();
-				indexBuffer->writeToBuffer(instance.indices.data(), bufferSize);
+				indexBuffer->writeToBuffer(mesh->indices.data(), bufferSize);
 				indexBuffer->unmap();
 			}
 		}
 		uploaded = true;
 	}
 
-	void GPUMesh::update(MeshInstance& instance) {
-		createBuffers(instance);
+	void GPUMesh::update(const Mesh* mesh) {
+		createBuffers(mesh);
 	}
 
 	void GPUMesh::draw(VkCommandBuffer commandBuffer) const {
@@ -145,7 +145,7 @@ namespace myvk {
 	std::vector<VkVertexInputBindingDescription> GPUMesh::getBindingDescriptions() {
 		std::vector<VkVertexInputBindingDescription> bindingDescriptions(1);
 		bindingDescriptions[0].binding = 0;
-		bindingDescriptions[0].stride = sizeof(MeshInstance::Vertex);
+		bindingDescriptions[0].stride = sizeof(Mesh::Vertex);
 		bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 		return bindingDescriptions;
 	}
@@ -160,12 +160,12 @@ namespace myvk {
 		attributeDescriptions[1].binding = 0;
 		attributeDescriptions[1].location = 1;
 		attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
-		attributeDescriptions[1].offset = offsetof(MeshInstance::Vertex, u);
+		attributeDescriptions[1].offset = offsetof(Mesh::Vertex, u);
 
 		attributeDescriptions[2].binding = 0;
 		attributeDescriptions[2].location = 2;
 		attributeDescriptions[2].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-		attributeDescriptions[2].offset = offsetof(MeshInstance::Vertex, r);
+		attributeDescriptions[2].offset = offsetof(Mesh::Vertex, r);
 
 		return attributeDescriptions;
 	}

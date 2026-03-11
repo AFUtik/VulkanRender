@@ -42,12 +42,5 @@ namespace myvk {
 		Camera camera;
 
 		std::unique_ptr<DescriptorPoolManager> globalPool{};
-
-		std::unique_ptr<DescriptorSetLayout> globalSetLayout;
-		std::unique_ptr<DescriptorSetLayout> materialSetLayout;
-		std::vector<DescriptorSetData> globalDescriptorSets;
-		std::vector<VkDescriptorSetLayout> globalLayouts;
-		std::vector<std::unique_ptr<Buffer>> globalUniform;
-		std::shared_ptr<Model> model;
 	};
 }

@@ -20,8 +20,11 @@ struct GlobalUbo {
 };
 
 namespace myvk {
+	class RenderSystem;
+
 	class ObjectRenderer {
 	public:
+		RenderScene* renderScene;
 		RenderSystem* renderSystem;
 
 		virtual void buildDrawList() = 0;
@@ -43,6 +46,8 @@ namespace myvk {
 	protected:
 		void createPipelineLayout(const std::vector<VkDescriptorSetLayout>& layouts);
 		void createPipeline(VkRenderPass renderPass, PipelineConfigInfo& pipelineConfig);
+
+		std::unique_ptr<RenderScene> renderScene;
 
 		Device& device;
 		FrameInfo& frame;

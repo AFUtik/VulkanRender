@@ -11,14 +11,16 @@ namespace myvk {
 class GUIWindowRender {
 public:
     uint32_t version = 0;
-    
-    std::vector<std::shared_ptr<Model>> models;
+
+    std::unique_ptr<MeshObject> meshWindow;
+    Handle<RenderObject> windowObjectId;
 
     inline bool isVisible() {return window->visible;};
-    void fetchWindow();
 private:
     void buildMesh();
+
     GUIWindow* window;
+    RenderScene* scene;
 
     friend class GUIRenderer;
 };
@@ -26,7 +28,8 @@ private:
 class GUIRenderer : public ObjectRenderer {
 public:
     std::vector<std::unique_ptr<GUIWindowRender>> windowToRender;
-    GUIContext* context;
+
+    GUIContext* context = nullptr;
     
     GUIRenderer(GUIContext* guiContext);
 

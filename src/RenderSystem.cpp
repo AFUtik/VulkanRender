@@ -1,6 +1,7 @@
 #include "RenderSystem.hpp"
 #include "FrameInfo.hpp"
 #include "Pipeline.hpp"
+#include "RenderScene.hpp"
 #include "model/GPUTexture.hpp"
 #include "model/Mesh.hpp"
 
@@ -13,7 +14,9 @@
 
 namespace myvk {
 
-RenderSystem::RenderSystem(Device &device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts, FrameInfo& frame) : device(device), frame(frame) {
+RenderSystem::RenderSystem(Device &device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts, FrameInfo& frame) : 
+	device(device), frame(frame) 
+{
 	createPipelineLayout(layouts);
 
 	PipelineConfigInfo config{};
@@ -28,6 +31,7 @@ RenderSystem::~RenderSystem() {
 
 void RenderSystem::registerRenderer(std::shared_ptr<ObjectRenderer> renderer) {
 	renderer->renderSystem = this;
+	renderer->renderScene = renderScene.get();
 	renderers.push_back(renderer);
 }
 
@@ -88,19 +92,25 @@ void RenderSystem::render() {
 		&descriptorSets[frame.frameIndex].set,
 		0, nullptr
 	);
-	for(Model* model : drawList) {
+	for(Handle<RenderObject> object : drawList) {
+		if(object.handle == RenderScene::INVALID_HANDLE) continue;
+
+		RenderObject& renderObject = renderScene->renderables[object.handle];
+		DrawMesh& drawMesh = renderScene->meshes[renderObject.mesh.handle];
+		DrawMaterial& drawMaterial = renderScene->materials[renderObject.material.handle];
+
 		vkCmdPushConstants(
 			frame.commandBuffer,
 			pipelineLayout,
 			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
 			0,
 			sizeof(PushConstantData),
-			&model->transform.model()
+			&renderObject.transform
 		);
 
-		model->material->bind(frame.commandBuffer, pipelineLayout, frame.frameIndex);
-		model->mesh->bind(frame.commandBuffer);
-		model->mesh->draw(frame.commandBuffer);
+		drawMaterial.gpuData->bind(frame.commandBuffer, pipelineLayout, frame.frameIndex);
+		drawMesh.gpuData->bind(frame.commandBuffer);
+		drawMesh.gpuData->draw(frame.commandBuffer);
 	}
 	drawList.clear();
 }

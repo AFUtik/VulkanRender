@@ -2,6 +2,7 @@
 #include "Descriptors.hpp"
 
 #include "FrameInfo.hpp"
+#include "RenderScene.hpp"
 #include "glm/ext/matrix_float4x4.hpp"
 
 #include <locale>
@@ -23,7 +24,6 @@ UIRenderSystem::UIRenderSystem(
 	descriptorPool = pool;
 
 	createUILayouts();
-	createEmptyMaterial();
     createPipelineLayout(layouts);
 
 	PipelineConfigInfo config{};
@@ -39,6 +39,8 @@ UIRenderSystem::UIRenderSystem(
 	config.colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
 	config.colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
 	createPipeline(renderPass, config);
+
+	renderScene = std::make_unique<RenderScene>(device, *pool, *materialSetLayout);
 }
 
 void UIRenderSystem::createUILayouts() {

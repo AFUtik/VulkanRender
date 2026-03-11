@@ -7,13 +7,16 @@
 #include "Descriptors.hpp"
 #include "FreeList.hpp"
 
+#include <limits>
 #include <memory>
+#include <deque>
+#include <unordered_map>
 
 namespace myvk {
 
 template <typename T>
 struct Handle {
-    uint32_t handle;
+    uint32_t handle = std::numeric_limits<uint32_t>().max(); // DEFAULT INVALID HANDLE //
 };
 
 struct DrawMesh {
@@ -24,55 +27,61 @@ struct DrawMesh {
 	bool isMerged;
 
 	std::unique_ptr<GPUMesh> gpuData;
-    Mesh* original;
+    const Mesh* original;
     uint32_t refCount = 0;
 };
 
 struct DrawMaterial {
     std::unique_ptr<GPUMaterial> gpuData;
-    Material* original;
+    const Material* original;
     uint32_t refCount = 0;
 };
 
 struct RenderObject {
-    MeshObject* meshObject;
     Handle<DrawMesh> mesh;
     Handle<DrawMaterial> material;
     glm::mat4 transform;
 };
+
+class RenderSystem;
 
 class RenderScene {
 private:
     Device& device;
     DescriptorPoolManager& pool;
     DescriptorSetLayout& materialLayout;
-    VkPipelineLayout pipelineLayout;
     
     FreeList<RenderObject> renderables;
     FreeList<DrawMesh> meshes;
     FreeList<DrawMaterial> materials;
 
-    std::vector<Handle<RenderObject>> dirtyObjects;
-
-	std::unordered_map<Mesh*, Handle<DrawMesh>> meshConvert;
-    std::unordered_map<Material*, Handle<DrawMaterial>> materialConvert;
+	std::unordered_map<const Mesh*, Handle<DrawMesh>> meshConvert;
+    std::unordered_map<const Material*, Handle<DrawMaterial>> materialConvert;
     
-    Handle<DrawMesh> getMeshHandle(Mesh* m);
-    Handle<DrawMaterial> getMaterialHandle(Material* m);
+    Handle<DrawMesh> getMeshHandle(const Mesh* mesh);
+    Handle<DrawMaterial> getMaterialHandle(const Material* material);
 
     void deleteMeshDeffered(Handle<DrawMesh> &handle);
     void deleteMaterialDeffered(Handle<DrawMaterial> &handle);
-public:
-    RenderScene(Device& device, DescriptorPoolManager& pool, DescriptorPoolManager& materialLayout, VkPipelineLayout pipelineLayout);
 
-    Handle<RenderObject> registerObject(MeshObject* meshObject);
-    void updateObject(Handle<RenderObject> objectId);
+    // Creates material where albedo is 1x1 white texture, sets by default if there's no material in meshObject //
+    void createEmptyMaterial(); 
+
+    static constexpr uint32_t INVALID_HANDLE   = std::numeric_limits<uint32_t>().max();
+    static constexpr uint32_t DESTROYED_HANDLE = INVALID_HANDLE-1;
+
+    Handle<DrawMaterial> defMaterialHandle;
+
+    friend class RenderSystem;
+public:
+    RenderScene(Device& device, DescriptorPoolManager& pool, DescriptorSetLayout& materialLayout);
+
+    Handle<RenderObject> registerObject(const MeshObject* meshObject);
+    void updateTransform(Handle<RenderObject> objectId, const glm::mat4& localToWorld);
+    void updateMeshData(const MeshObject* meshObject, Handle<RenderObject> objectId);
+    //void updateMaterialData(const MeshObject* meshObject, Handle<RenderObject> objectId);
 
     void deleteObjectDeffered(Handle<RenderObject> objectId);
-    
-    void updateTransform(Handle<RenderObject> objectId, const glm::mat4& localToWorld);
-
-    inline RenderObject& getRenderObject(Handle<RenderObject> handle) {return renderables[handle.handle];}
 };
 
 }

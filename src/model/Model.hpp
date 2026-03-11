@@ -55,7 +55,7 @@ namespace myvk {
 			dirty = true;
 		}
 
-		inline glm::mat4& model()
+		inline const glm::mat4& model()
 		{
 			if (!dirty) return mat;
 
@@ -68,6 +68,8 @@ namespace myvk {
 
 			return mat;
 		}
+
+		inline const glm::mat4& matrix() const { return mat;}
 	};
 
 	struct Material {
@@ -79,13 +81,20 @@ namespace myvk {
 		uint32_t objectId;
 
 		Transform3<double> transform;
-		std::shared_ptr<Mesh> mesh;
-		std::shared_ptr<Material> material;
-
-		MeshObject() {};
+		
+		MeshObject(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material) : mesh(mesh), material(material) {};
 		~MeshObject() {};
 
 		MeshObject(const MeshObject&) = delete;
 		MeshObject& operator=(const MeshObject&) = delete;
+
+		void setMesh(std::unique_ptr<Mesh> mesh);
+		void setMaterial(std::unique_ptr<Material> material);
+
+		inline const Mesh* getMesh() const {return mesh.get();}
+		inline const Material* getMaterial() const {return material.get();}
+	private:
+		std::shared_ptr<Mesh> mesh;
+		std::shared_ptr<Material> material;
 	};
 }
