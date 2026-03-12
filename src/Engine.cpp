@@ -1,6 +1,8 @@
 #include "Engine.hpp"
 #include "Descriptors.hpp"
 
+#include "Fonts.hpp"
+#include "RenderSystem.hpp"
 #include "UIRenderSystem.hpp"
 #include "GlobalRenderSystem.hpp"
 
@@ -48,7 +50,10 @@ void Engine::run() {
 	//	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	//}
 
-	GUIContext guiContext(Rect{(uint32_t)window.width, (uint32_t)window.height});
+	FontHandler fontHandler;
+	fontHandler.createSample("Minecraft", absolutePath+"resources/fonts/minecraftRegular.otf");
+
+	GUIContext guiContext(Rect{window.width, window.height});
 	auto guiWindow = std::make_shared<GUIWindow>();
 	guiWindow->window.width = 700;
 	guiWindow->window.height = 500;
@@ -60,7 +65,7 @@ void Engine::run() {
 	GUIEventListener guiEventListener(&guiContext);
 
 	UIRenderSystem uiRenderSystem(device, renderer.getSwapChainRenderPass(), globalPool.get(), frameInfo);
-	std::shared_ptr<GUIRenderer> guiRenderer = std::make_shared<GUIRenderer>(&guiContext);
+	std::shared_ptr<GUIRenderer> guiRenderer = std::make_shared<GUIRenderer>(&guiContext, &fontHandler);
 	uiRenderSystem.registerRenderer(guiRenderer);
 	
 	guiRenderer->fetchContext();
@@ -84,6 +89,7 @@ void Engine::run() {
 		timeAccu += frameTime;
 		if (timeAccu >= H) {
 			guiEventListener.listen();
+			guiRenderer->syncAll();
 
 			if (Events::pressed(GLFW_KEY_W)) {
 				camera.translate(camera.zdir() * H * speed);

@@ -8,7 +8,7 @@
 namespace myvk {
 
 
-TextMesh::TextMesh(Text* text) : Mesh(512), text(text) {
+TextMesh::TextMesh(Text* text, Font* font) : Mesh(512), text(text), font(font) {
     buildVertices();
 }
 
@@ -18,10 +18,7 @@ void TextMesh::buildVertices() {
     meshContent.clear();
     indCount = 0;
 
-    Font* font = text->getFont();
     AtlasBitmap* atlasBitmap = font->fontData.bitmap.get();
-
-    pen_y = font->fontData.baseline_y;
 
     std::u32string_view content = text->getContent();
     uint32_t prevCodepoint = 0;
@@ -38,7 +35,7 @@ void TextMesh::buildVertices() {
         const Tile& tile = atlasBitmap->getTile(index);
 
         float x = static_cast<float>(pen_x + glyph.bearing_x);
-        float y = static_cast<float>(pen_y - (tile.height - glyph.bearing_y));
+        float y = static_cast<float>(pen_y - ((int)tile.height - glyph.bearing_y));
 
         float w = static_cast<float>(tile.width);
         float h = static_cast<float>(tile.height);

@@ -14,6 +14,8 @@ GlobalRenderSystem::GlobalRenderSystem(Device &device, VkRenderPass renderPass, 
 	Pipeline::defaultPipelineConfigInfo(config);
 
 	createPipeline(renderPass, config);
+
+	renderScene = std::make_unique<RenderScene>(device, *descriptorPool, *materialSetLayout);
 }
 
 void GlobalRenderSystem::createGlobalLayouts() {

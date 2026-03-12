@@ -11,8 +11,6 @@
 #include "Buffer.hpp"
 #include "FrameInfo.hpp"
 
-#include "model/Model.hpp"
-
 #include <memory>
 #include <vector>
 

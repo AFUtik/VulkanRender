@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 
+class Font;
 class Text;
 
 namespace myvk 
@@ -33,6 +34,7 @@ public:
 
 class TextMesh : public Mesh {
     Text* text = nullptr;
+    Font* font = nullptr;
     std::u32string meshContent;
 
     int pen_x = 0;
@@ -40,7 +42,7 @@ class TextMesh : public Mesh {
 
     void buildVertices();
 public:
-    TextMesh(Text* text);
+    TextMesh(Text* text, Font* font);
 
     void build();
 };

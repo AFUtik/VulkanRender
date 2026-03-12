@@ -25,13 +25,15 @@ enum MouseButtons {
 };
 
 struct Vec2 {
-    uint32_t x;
-    uint32_t y;
+    int32_t x;
+    int32_t y;
 };
 
 struct Rect {
-    uint32_t width;
-    uint32_t height;
+    int32_t x; 
+    int32_t y;
+    int32_t width;
+    int32_t height;
 };
 
 struct Color {
@@ -52,13 +54,9 @@ struct Color {
 };
 
 struct MouseMoveEvent {
-    uint32_t mouseX = 0;
-    uint32_t mouseY = 0;
-    float deltaX = 0.0f;
-    float deltaY = 0.0f;
-    float scrollX = 0.0f;
-    float scrollY = 0.0f;
-    int button = 0;
+    Vec2 pos;
+    Vec2 delta;
+    int button = -1;
 };
 
 struct MouseClickEvent {
@@ -104,6 +102,8 @@ struct GUIWindow {
     Color footerColor = Color::hex("#d8d8d8");
     Color windowColor = Color::hex("#ffffff");
     Color contentColor;
+
+    std::string name = "Some Window";
 
     // Content padding //
     GUIContent* activeContent = nullptr;
@@ -153,6 +153,8 @@ struct GUIEventListener {
     MouseMoveEvent mouseMoveEvent;
     MouseClickEvent mouseClickEvent;
     KeyEvent keyEvent;
+
+    Vec2 lastMousePos;
 
     GUIEventListener(GUIContext* context) : context(context) {};
 

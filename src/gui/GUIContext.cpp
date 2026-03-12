@@ -24,7 +24,12 @@ void GUIContext::keyEvent(KeyEvent& keyEvent) {
 }
 
 void GUIContext::mouseMoveEvent(MouseMoveEvent& mouseMoveEvent) {
-    
+    GUIWindow* window = getWindowByCursor(mouseMoveEvent.pos);
+
+    if(window && mouseMoveEvent.button >= 0) {
+        window->pos.x += (int)mouseMoveEvent.delta.x;
+        window->pos.y += (int)mouseMoveEvent.delta.y;
+    }
 }
 
 void GUIContext::mouseClickEvent(MouseClickEvent& mouseClickEvent) {
@@ -42,18 +47,21 @@ void GUIContext::reorderWindow(GUIWindow* window) {
 }
 
 GUIWindow* GUIContext::getWindowByCursor(Vec2 pos) {
-    
-    GUIWindow* curWindow = nullptr;
-    int maxZ = -1;
 
-    for(auto& window : windows_) {
-        if(window->zOrder > maxZ) {
-            curWindow = window.get();
-            maxZ = curWindow->zOrder;
+    for(auto it = windows_.rbegin(); it != windows_.rend(); ++it) {
+
+        auto& window = *it;
+
+        if(pos.x >= window->pos.x &&
+           pos.x <= window->pos.x + window->window.width &&
+           pos.y >= window->pos.y &&
+           pos.y <= window->pos.y + window->window.height)
+        {
+            return window.get();
         }
     }
-    reorderWindow(curWindow);
-    return curWindow;
+
+    return nullptr;
 }
 
 void GUIEventListener::listen() {
@@ -80,7 +88,6 @@ void GUIEventListener::listen() {
     if(mouseButtonPressed) context->mouseClickEvent(mouseClickEvent);
 
     // MOUSE MOVE EVENT //
-    int button = -1;
     if(Events::clicked(GLFW_MOUSE_BUTTON_LEFT)) {
         mouseMoveEvent.button = MouseButtons::Left;
     }
@@ -89,12 +96,17 @@ void GUIEventListener::listen() {
     }
     else if(Events::clicked(GLFW_MOUSE_BUTTON_MIDDLE)) {
         mouseMoveEvent.button = MouseButtons::Middle;
+    } else {
+        mouseMoveEvent.button = -1;
     }
-    mouseMoveEvent.mouseX = Events::x;
-    mouseMoveEvent.mouseY = Events::y;
-    mouseMoveEvent.deltaX = Events::deltaX;
-    mouseMoveEvent.deltaY = Events::deltaY;
+    mouseMoveEvent.pos.x = Events::x;
+    mouseMoveEvent.pos.y = Events::y;
+    mouseMoveEvent.delta.x = (int)Events::x - lastMousePos.x;
+    mouseMoveEvent.delta.y = (int)Events::y - lastMousePos.y;
     context->mouseMoveEvent(mouseMoveEvent);
+
+    lastMousePos.x = mouseMoveEvent.pos.x;
+    lastMousePos.y = mouseMoveEvent.pos.y;
 
     // KEY EVENT //
 }

@@ -4,6 +4,7 @@
 #include "RenderScene.hpp"
 #include "model/GPUTexture.hpp"
 #include "model/Mesh.hpp"
+#include "vulkan/vulkan_core.h"
 
 #include <memory>
 #include <stdexcept>
@@ -11,6 +12,7 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
+#include <iostream>
 
 namespace myvk {
 
@@ -92,8 +94,8 @@ void RenderSystem::render() {
 		&descriptorSets[frame.frameIndex].set,
 		0, nullptr
 	);
-	for(Handle<RenderObject> object : drawList) {
-		if(object.handle == RenderScene::INVALID_HANDLE) continue;
+	for(Handle<RenderObject> object : renderScene->drawList) {
+		if(!object.valid()) continue;
 
 		RenderObject& renderObject = renderScene->renderables[object.handle];
 		DrawMesh& drawMesh = renderScene->meshes[renderObject.mesh.handle];
@@ -105,14 +107,28 @@ void RenderSystem::render() {
 			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
 			0,
 			sizeof(PushConstantData),
-			&renderObject.transform
+			&renderObject.meshObject->transform.matrix()
 		);
 
 		drawMaterial.gpuData->bind(frame.commandBuffer, pipelineLayout, frame.frameIndex);
 		drawMesh.gpuData->bind(frame.commandBuffer);
+		if(renderObject.scissorHeight > 0 && renderObject.scissorWidth > 0)
+		{
+			int x = (int)renderObject.meshObject->transform.getX();
+			int y = 1050 - (int)renderObject.meshObject->transform.getY();
+
+			VkRect2D vkRect{};
+			vkRect.offset = { x, y };
+			vkRect.extent = {
+				renderObject.scissorWidth,
+				renderObject.scissorHeight
+			};
+
+			vkCmdSetScissor(frame.commandBuffer, 0, 1, &vkRect);
+		}
+
 		drawMesh.gpuData->draw(frame.commandBuffer);
 	}
-	drawList.clear();
 }
 
 }

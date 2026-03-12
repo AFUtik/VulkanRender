@@ -24,8 +24,11 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos){
 	else {
 		Events::_cursor_started = true;
 	}
+	int winW, winH;
+    glfwGetWindowSize(window, &winW, &winH);
+	
 	Events::x = xpos;
-	Events::y = ypos;
+	Events::y = winH - ypos;
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mode){

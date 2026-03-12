@@ -14,8 +14,9 @@
 
 // FONT //
 
-Font::Font(FontSample* sample) : sample(sample) 
+Font::Font(FontSample* sample, FontData& data) : sample(sample) 
 {
+    fontData = std::move(data);
     sample->create(fontData);
 }
 
@@ -39,7 +40,7 @@ FT_Vector Font::getKerning(char32_t prevChar, char32_t nextChar) {
 
 // TEXT //
 
-Text::Text(Font* font, std::u32string content) : font(font), content(content) {
+Text::Text(std::u32string content) : content(content) {
 
 }
 
@@ -112,7 +113,7 @@ void FontSample::rasterize(FontData& data) {
         i++;
     }
     atlasDesc.packAll();
-    data.bitmap = std::make_unique<AtlasBitmap>(atlasDesc, TextureChannels::Grayscale);
+    data.bitmap = std::make_shared<AtlasBitmap>(atlasDesc, TextureChannels::Grayscale);
 }
 
 void FontSample::loadCharset() {

@@ -17,7 +17,7 @@ struct GlyphInfo {
 
 struct FontData {
     FT_Face face = nullptr;
-    std::unique_ptr<AtlasBitmap> bitmap;
+    std::shared_ptr<AtlasBitmap> bitmap;
 
     uint32_t pxHeight = 32;
     float scale = 1.0f;
@@ -56,23 +56,21 @@ struct Font {
     FontData fontData;
     FontSample* sample;
     
-    Font(FontSample *sample_);
+    Font(FontSample *sample_, FontData& fontData);
     ~Font();
 
     FT_Vector getKerning(char32_t prevChar, char32_t nextChar);
 };
 
 class Text {
-    Font* font;
     std::u32string content;
 
     uint32_t widthBox;
     uint32_t heightBox;
 public:
-    Text(Font* font, std::u32string content = U"");
+    Text(std::u32string content = U"");
     
     std::u32string& getContent() {return content;}
-    Font* getFont() {return font;}
 };
 
 class FontHandler {

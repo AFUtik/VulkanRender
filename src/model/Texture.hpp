@@ -13,6 +13,13 @@ enum TextureChannels : uint32_t {
     GrayscaleAlpha = 2
 };
 
+enum class TextureFilter {
+	Linear,
+	Nearest,
+	LinearMipmap,
+	NearestMipmap
+};
+
 // Contains data about image not vulkan image //
 class Texture2D {
 public:

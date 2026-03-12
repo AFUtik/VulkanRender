@@ -8,13 +8,6 @@
 #include <vma/vk_mem_alloc.h>
 
 namespace myvk {
-    enum class TextureFilter {
-        Linear,
-        Nearest,
-        LinearMipmap,
-        NearestMipmap
-    };
-
     class GPUTexture {
     public:
         struct DeletionInfo {

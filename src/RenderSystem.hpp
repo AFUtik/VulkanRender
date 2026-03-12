@@ -8,7 +8,7 @@
 #include "RenderScene.hpp"
 #include "model/GPUMesh.hpp"
 #include "model/GPUMaterial.hpp"
-#include "model/Model.hpp"
+#include "model/MeshObject.hpp"
 
 #include <memory>
 #include <vector>

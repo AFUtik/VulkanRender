@@ -13,9 +13,9 @@
 #include "Texture.hpp"
 #include <memory>
 
-class RenderSystem;
-
 namespace myvk {
+	class RenderScene;
+
 	struct PushConstantData {
 		alignas(16) glm::mat4 model;
 	};
@@ -28,6 +28,9 @@ namespace myvk {
 		bool dirty = true;
 		glm::mat4 mat{ 1.0f };
 		using vec = glm::vec<3, T, glm::defaultp>;
+
+		inline double getX() const {return mat[3].x;}
+		inline double getY() const {return mat[3].y;}
 
 		inline void translate(vec delta) {
 			mat[3] += glm::vec4(delta.x, delta.y, delta.z, 0.0f);
@@ -74,27 +77,62 @@ namespace myvk {
 
 	struct Material {
 		std::shared_ptr<Texture2D> albedo;
+		TextureFilter albedoFilter;
 	};
 
 	class MeshObject {
 	public:
-		uint32_t objectId;
-
 		Transform3<double> transform;
 		
-		MeshObject(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material) : mesh(mesh), material(material) {};
-		~MeshObject() {};
+		MeshObject() {};
+		~MeshObject();
 
 		MeshObject(const MeshObject&) = delete;
 		MeshObject& operator=(const MeshObject&) = delete;
 
-		void setMesh(std::unique_ptr<Mesh> mesh);
-		void setMaterial(std::unique_ptr<Material> material);
+		void attachToScene();
+		void detachFromScene();
+
+		void setMesh(std::shared_ptr<Mesh> mesh);
+		void setMaterial(std::shared_ptr<Material> material);
+
+		inline void setScissor(uint32_t width, uint32_t height) {
+			scissorWidth = width;
+			scissorHeight = height;
+		}
+
+		void updateMesh();
+		void updateMaterial();
 
 		inline const Mesh* getMesh() const {return mesh.get();}
 		inline const Material* getMaterial() const {return material.get();}
+
+		inline uint32_t getScissorWidth() {return scissorWidth;}
+		inline uint32_t getScissorHeight() {return scissorHeight;}
+
+		inline void tryFree() {
+			if(!keepAfterUpload) {
+				mesh.reset();
+				material.reset();
+			}
+		}
+
+		inline uint32_t getRenderId() const {return renderId;}
+
+		inline void freeAfterUpload() {keepAfterUpload = false;}
+		inline void setRenderId(uint32_t handle) {renderId = handle;}
+		inline void setRenderScene(RenderScene* scene) {renderScene = scene;}
 	private:
+		bool keepAfterUpload = true;
+		bool attached = false;
+
 		std::shared_ptr<Mesh> mesh;
 		std::shared_ptr<Material> material;
+		
+		RenderScene* renderScene = nullptr;
+		uint32_t renderId = std::numeric_limits<uint32_t>().max(); // INVALID HANDLE //
+
+		uint32_t scissorWidth = 0;
+		uint32_t scissorHeight = 0;
 	};
 }

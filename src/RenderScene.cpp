@@ -19,23 +19,43 @@ void RenderScene::createEmptyMaterial() {
     defMaterialHandle = getMaterialHandle(&material);
 }
 
-Handle<RenderObject> RenderScene::registerObject(const MeshObject* meshObject) {
+Handle<RenderObject> RenderScene::registerObject(MeshObject* meshObject) {
     RenderObject render;
     render.mesh = getMeshHandle(meshObject->getMesh());
     render.material = getMaterialHandle(meshObject->getMaterial());
-    render.transform = meshObject->transform.matrix();
+    render.meshObject = meshObject;
+    render.scissorWidth = meshObject->getScissorWidth();
+    render.scissorHeight = meshObject->getScissorHeight();
 
     Handle<RenderObject> handle;
     handle.handle = renderables.create(render);
 
+    meshObject->setRenderScene(this);
+    meshObject->setRenderId(handle.handle);
+    meshObject->tryFree();
+    attach(handle);
+
     return handle;
+}
+
+void RenderScene::attach(Handle<RenderObject> objectId) {
+    RenderObject& renderObject = renderables[objectId.handle];
+    renderObject.drawIndex = Handle<uint32_t>(drawList.size());
+    drawList.push_back(objectId);
+}
+
+void RenderScene::detach(Handle<RenderObject> objectId) {
+    RenderObject& renderObject = renderables[objectId.handle];
+    if(renderObject.drawIndex.valid()) {
+        drawList.erase(drawList.begin() + renderObject.drawIndex.handle);
+    };
 }
 
 void RenderScene::updateMeshData(const MeshObject* meshObject, Handle<RenderObject> objectId) {
     RenderObject& renderObject = renderables[objectId.handle];
     const Mesh* mesh = meshObject->getMesh();
 
-    if(renderObject.mesh.handle == INVALID_HANDLE) {
+    if(renderObject.mesh.valid()) {
         renderObject.mesh = getMeshHandle(mesh);
     }
     else {
@@ -44,13 +64,8 @@ void RenderScene::updateMeshData(const MeshObject* meshObject, Handle<RenderObje
     }
 }
 
-void RenderScene::updateTransform(Handle<RenderObject> objectId, const glm::mat4& transform) {
-    RenderObject& renderObject = renderables[objectId.handle];
-    renderObject.transform = transform;
-}
-
 void RenderScene::deleteObjectDeffered(Handle<RenderObject> handle) {
-    if(handle.handle == INVALID_HANDLE) {
+    if(!handle.valid()) {
         std::cerr << "RenderScene: Failed to delete RenderObject by this handle. The handle is invalid" << std::endl;
         return;
     }
@@ -64,7 +79,7 @@ void RenderScene::deleteObjectDeffered(Handle<RenderObject> handle) {
 }
 
 void RenderScene::deleteMeshDeffered(Handle<DrawMesh> &handle) {
-    if(handle.handle == INVALID_HANDLE) {
+    if(!handle.valid()) {
         std::cerr << "RenderScene: Failed to delete Mesh by this handle. The handle is invalid" << std::endl;
         return;
     }
@@ -73,16 +88,18 @@ void RenderScene::deleteMeshDeffered(Handle<DrawMesh> &handle) {
     drawMesh.refCount--;
 
     if(drawMesh.refCount == 0) {
+        std::cout << "RenderScene: Mesh " << drawMesh.original << " is deleted from GPU memory" << std::endl;
+
         auto it = meshConvert.find(drawMesh.original);
         if(it != meshConvert.end()) meshConvert.erase(it);
 
         meshes.remove(handle.handle);
-        handle.handle = DESTROYED_HANDLE;
+        handle.destroy();
     }
 }
 
 void RenderScene::deleteMaterialDeffered(Handle<DrawMaterial> &handle) {
-    if(handle.handle == INVALID_HANDLE) {
+    if(!handle.valid()) {
         std::cerr << "RenderScene: Failed to delete Material by this handle. The handle is invalid" << std::endl;
         return;
     }
@@ -96,7 +113,7 @@ void RenderScene::deleteMaterialDeffered(Handle<DrawMaterial> &handle) {
         if(it != materialConvert.end()) materialConvert.erase(it);
 
         materials.remove(handle.handle);
-        handle.handle = DESTROYED_HANDLE;
+        handle.destroy();
     }
 }
 
@@ -139,7 +156,7 @@ Handle<DrawMaterial> RenderScene::getMaterialHandle(const Material* material) {
     else {
         if(!material->albedo) return Handle<DrawMaterial>();
 
-        auto texture  = std::make_shared<GPUTexture>(device, material->albedo.get());
+        auto texture  = std::make_shared<GPUTexture>(device, material->albedo.get(), material->albedoFilter);
 
         DrawMaterial drawMaterial;
         drawMaterial.original = material;
