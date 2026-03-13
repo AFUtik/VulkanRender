@@ -26,16 +26,12 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <stb_image.h>
+#include <iostream>
 
 using namespace myvk;
 
 Engine::Engine() : camera(window.width, window.height, glm::dvec3(0, 0, 5), glm::radians(90.0f)), frameInfo(0, 0.0f, VK_NULL_HANDLE, camera) {
 	Events::init(window.window);
-	globalPool = DescriptorPoolManager::Builder(device)
-		.setMaxSets(72)
-		.addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 8)
-		.addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 64)
-		.build();
 }
 
 Engine::~Engine() {
@@ -43,6 +39,8 @@ Engine::~Engine() {
 }
 
 void Engine::run() {
+	Renderer renderer(window, device);
+
 	//VkDescriptorImageInfo imageInfo;
 	//if(model->texture) {
 	//	imageInfo.sampler = model->texture->getSampler();
@@ -64,14 +62,13 @@ void Engine::run() {
 	
 	GUIEventListener guiEventListener(&guiContext);
 
-	UIRenderSystem uiRenderSystem(device, renderer.getSwapChainRenderPass(), globalPool.get(), frameInfo);
-	std::shared_ptr<GUIRenderer> guiRenderer = std::make_shared<GUIRenderer>(&guiContext, &fontHandler);
-	uiRenderSystem.registerRenderer(guiRenderer);
+	UIRenderSystem uiRenderSystem(device, renderer.getSwapChainRenderPass(), renderer.getDescriptorPool(), frameInfo);
+	//std::shared_ptr<GUIRenderer> guiRenderer = std::make_shared<GUIRenderer>(&guiContext, &fontHandler);
+	//uiRenderSystem.registerRenderer(guiRenderer);
 	
-	guiRenderer->fetchContext();
+	//guiRenderer->fetchContext();
 
-	
-	GlobalRenderSystem renderSystem(device, renderer.getSwapChainRenderPass(), globalPool.get(), frameInfo);
+	GlobalRenderSystem renderSystem(device, renderer.getSwapChainRenderPass(), renderer.getDescriptorPool(), frameInfo);
 
 	Events::toggle_cursor(&window);
 	double lastTime = glfwGetTime();
@@ -88,8 +85,8 @@ void Engine::run() {
 
 		timeAccu += frameTime;
 		if (timeAccu >= H) {
-			guiEventListener.listen();
-			guiRenderer->syncAll();
+			//guiEventListener.listen();
+			//guiRenderer->syncAll();
 
 			if (Events::pressed(GLFW_KEY_W)) {
 				camera.translate(camera.zdir() * H * speed);
@@ -143,7 +140,9 @@ void Engine::run() {
 		}
 		Events::pullEvents();
 	}
+
 	vkDeviceWaitIdle(device.device());
+	std::cout << "End Function" << std::endl;
 }
 
 /*

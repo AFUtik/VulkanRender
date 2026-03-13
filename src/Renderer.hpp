@@ -4,6 +4,7 @@
 #include "window/Window.hpp"
 #include "Pipeline.hpp"
 #include "Swapchain.hpp"
+#include "Descriptors.hpp"
 
 #include <memory>
 #include <vector>
@@ -20,6 +21,8 @@ namespace myvk {
 
 		VkRenderPass getSwapChainRenderPass() { return swapchain->getRenderPass(); }
 		bool isFrameInProgress() const { return isFrameStarted; }
+
+		DescriptorPoolManager* getDescriptorPool() { return descriptorPoolManager.get(); }
 
 		VkCommandBuffer getCurrentCommandBuffer() const { 
 			assert(isFrameStarted && "Cannot get command buffer when frame not in progress");
@@ -46,6 +49,8 @@ namespace myvk {
 
 		std::unique_ptr<SwapChain> swapchain;
 		std::vector<VkCommandBuffer> commandBuffers;
+
+		std::unique_ptr<DescriptorPoolManager> descriptorPoolManager;
 
 		uint32_t currentImageIndex;
 		int currentFrameIndex = 0;

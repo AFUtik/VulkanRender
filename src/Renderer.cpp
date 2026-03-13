@@ -8,6 +8,11 @@ using namespace myvk;
 Renderer::Renderer(Window& window, Device& device) : window(window), device(device) {
 	recreateSwapChain();
 	createCommandBuffers();
+	descriptorPoolManager = DescriptorPoolManager::Builder(device)
+		.setMaxSets(100)
+		.addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 100)
+		.addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100)
+		.build();
 }
 
 Renderer::~Renderer() {

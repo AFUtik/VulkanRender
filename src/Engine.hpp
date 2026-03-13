@@ -34,11 +34,8 @@ namespace myvk {
 
 		Window window{ WIDTH, HEIGHT, "Vulkan Engine" };
 		Device device{ window };
-		Renderer renderer{ window, device };
 
 		FrameInfo frameInfo;
 		Camera camera;
-
-		std::unique_ptr<DescriptorPoolManager> globalPool{};
 	};
 }

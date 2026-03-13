@@ -61,7 +61,6 @@ namespace myvk {
         vkDeviceWaitIdle(device_);
 
         vkDestroyCommandPool(device_, commandPool, nullptr);
-        vkDestroyDevice(device_, nullptr);
 
         if (enableValidationLayers) {
             DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
@@ -72,6 +71,9 @@ namespace myvk {
 
         // VMA DESTROY
         vmaDestroyAllocator(allocator_);
+
+		// Destroy logical device
+        vkDestroyDevice(device_, nullptr);
     }
 
     void Device::createInstance() {
