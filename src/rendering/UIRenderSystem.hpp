@@ -1,13 +1,13 @@
 #pragma once
 
-#include "Camera.hpp"
-#include "Descriptors.hpp"
-#include "FrameInfo.hpp"
 #include "RenderSystem.hpp"
 
-#include "model/GPUMaterial.hpp"
-#include "gui/GUIRendering.hpp"
-#include "Fonts.hpp"
+// vulkan dep.
+#include "../vk/Descriptors.hpp"
+#include "../vk/FrameInfo.hpp"
+
+//#include "gui/GUIRendering.hpp"
+//#include "Fonts.hpp"
 
 namespace myvk {
 

@@ -1,14 +1,15 @@
 #pragma once
 
-#include "FreeList.hpp"
-#include "Pipeline.hpp"
-#include "FrameInfo.hpp"
-#include "Camera.hpp"
+#include "../FreeList.hpp"
+#include "../Camera.hpp"
+#include "../model/MeshObject.hpp"
 
-#include "RenderScene.hpp"
-#include "model/GPUMesh.hpp"
-#include "model/GPUMaterial.hpp"
-#include "model/MeshObject.hpp"
+#include "RenderService.hpp"
+
+#include "../vk/GPUMesh.hpp"
+#include "../vk/GPUMaterial.hpp"
+#include "../vk/Pipeline.hpp"
+#include "../vk/FrameInfo.hpp"
 
 #include <memory>
 #include <vector>
@@ -22,14 +23,6 @@ struct GlobalUbo {
 namespace myvk {
 	class RenderSystem;
 
-	class ObjectRenderer {
-	public:
-		RenderScene* renderScene;
-		RenderSystem* renderSystem;
-
-		virtual void buildDrawList() = 0;
-	};
-
 	class RenderSystem {
 	public:
 		RenderSystem(Device& device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts, FrameInfo& frame);
@@ -40,14 +33,12 @@ namespace myvk {
 		RenderSystem& operator=(const RenderSystem&) = delete;
 
 		virtual void render();
-		void registerRenderer(std::shared_ptr<ObjectRenderer> renderer);
-
-		inline void addToDrawList(Handle<RenderObject> objectId) {drawList.push_back(objectId);}
+		RenderService* getRenderService() {return renderService.get();}
 	protected:
 		void createPipelineLayout(const std::vector<VkDescriptorSetLayout>& layouts);
 		void createPipeline(VkRenderPass renderPass, PipelineConfigInfo& pipelineConfig);
 
-		std::unique_ptr<RenderScene> renderScene;
+		std::unique_ptr<RenderService> renderService;
 
 		Device& device;
 		FrameInfo& frame;
@@ -63,6 +54,6 @@ namespace myvk {
 		std::vector<std::unique_ptr<Buffer>> uniforms;
 
 		std::vector<Handle<RenderObject>> drawList;
-		std::vector<std::shared_ptr<ObjectRenderer>> renderers;
+		//std::vector<std::shared_ptr<ObjectRenderer>> renderers;
 	};
 }

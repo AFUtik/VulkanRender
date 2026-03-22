@@ -14,7 +14,7 @@
 #include <memory>
 
 namespace myvk {
-	class RenderScene;
+	class RenderService;
 
 	struct PushConstantData {
 		alignas(16) glm::mat4 model;
@@ -90,9 +90,6 @@ namespace myvk {
 		MeshObject(const MeshObject&) = delete;
 		MeshObject& operator=(const MeshObject&) = delete;
 
-		void attachToScene();
-		void detachFromScene();
-
 		void setMesh(std::shared_ptr<Mesh> mesh);
 		void setMaterial(std::shared_ptr<Material> material);
 
@@ -121,7 +118,7 @@ namespace myvk {
 
 		inline void freeAfterUpload() {keepAfterUpload = false;}
 		inline void setRenderId(uint32_t handle) {renderId = handle;}
-		inline void setRenderScene(RenderScene* scene) {renderScene = scene;}
+		inline void setRenderScene(RenderService* scene) {renderScene = scene;}
 	private:
 		bool keepAfterUpload = true;
 		bool attached = false;
@@ -129,7 +126,7 @@ namespace myvk {
 		std::shared_ptr<Mesh> mesh;
 		std::shared_ptr<Material> material;
 		
-		RenderScene* renderScene = nullptr;
+		RenderService* renderScene = nullptr;
 		uint32_t renderId = std::numeric_limits<uint32_t>().max(); // INVALID HANDLE //
 
 		uint32_t scissorWidth = 0;

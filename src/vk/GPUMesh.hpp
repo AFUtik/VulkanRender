@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../Buffer.hpp"
-#include "../Device.hpp"
+#include "Buffer.hpp"
+#include "Device.hpp"
 
-#include "Mesh.hpp"
+#include "../model/Mesh.hpp"
 
 namespace myvk {
 

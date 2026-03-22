@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Descriptors.hpp"
-#include "../Device.hpp"
+#include "Descriptors.hpp"
+#include "Device.hpp"
 
 #include "GPUTexture.hpp"
 

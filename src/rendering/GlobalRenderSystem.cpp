@@ -1,4 +1,5 @@
 #include "GlobalRenderSystem.hpp"
+#include "../Camera.hpp"
 
 namespace myvk {
 
@@ -15,7 +16,7 @@ GlobalRenderSystem::GlobalRenderSystem(Device &device, VkRenderPass renderPass, 
 
 	createPipeline(renderPass, config);
 
-	renderScene = std::make_unique<RenderScene>(device, *descriptorPool, *materialSetLayout);
+	renderService = std::make_unique<RenderService>(device, *descriptorPool, *materialSetLayout);
 }
 
 void GlobalRenderSystem::createGlobalLayouts() {
@@ -50,8 +51,9 @@ void GlobalRenderSystem::createGlobalLayouts() {
 	}
 }
 
-void GlobalRenderSystem::renderGlobal() {
-	ubo.projview = frame.camera.getProjviewProspective();
+void GlobalRenderSystem::renderGlobal(Camera* camera) {
+	ubo.projview = camera->getProjviewProspective();
+	
 	uniforms[frame.frameIndex]->writeToBuffer(&ubo);
 	uniforms[frame.frameIndex]->flush();
 

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../Device.hpp"
-#include "../Buffer.hpp"
+#include "Device.hpp"
+#include "Buffer.hpp"
 
-#include "Texture.hpp"
+#include "../model/Texture.hpp"
 
 #include <vma/vk_mem_alloc.h>
 

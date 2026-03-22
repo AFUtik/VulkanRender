@@ -28,7 +28,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos){
     glfwGetWindowSize(window, &winW, &winH);
 	
 	Events::x = xpos;
-	Events::y = winH - ypos;
+	Events::y = ypos;
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mode){

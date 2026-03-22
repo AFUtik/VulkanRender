@@ -1,23 +1,16 @@
 #include "MeshObject.hpp"
-#include "../RenderScene.hpp"
 
 namespace myvk {
 
 MeshObject::~MeshObject() {
-    if(renderScene) renderScene->deleteObjectDeffered(Handle<RenderObject>(renderId));
-}
-
-void MeshObject::attachToScene() {
-    if(Handle<RenderObject>::valid(renderId)) {
-        renderScene->attach(Handle<RenderObject>(renderId));
-    }
+    //if(renderScene) renderService->deleteObjectDeffered(Handle<RenderObject>(renderId));
 }
 
 void MeshObject::setMesh(std::shared_ptr<Mesh> mesh) {
-    this->mesh = mesh;
-    if(Handle<RenderObject>::valid(renderId)) {
-        renderScene->updateMeshData(this, Handle<RenderObject>(renderId));
-    }
+    //this->mesh = mesh;
+    //if(Handle<RenderObject>::valid(renderId)) {
+    //    renderService->updateMeshData(this, Handle<RenderObject>(renderId));
+    //}
 }
 
 void MeshObject::setMaterial(std::shared_ptr<Material> material) {
@@ -26,7 +19,7 @@ void MeshObject::setMaterial(std::shared_ptr<Material> material) {
 }
 
 void MeshObject::updateMesh() {
-    renderScene->updateMeshData(this, Handle<RenderObject>(renderId));
+    //renderService->updateMeshData(this, Handle<RenderObject>(renderId));
 }
 
 void MeshObject::updateMaterial() {

@@ -1,12 +1,12 @@
 #pragma once
 
-#include "model/GPUTexture.hpp"
-#include "model/MeshObject.hpp"
-#include "model/GPUMesh.hpp"
-#include "model/GPUMaterial.hpp"
+#include "../model/MeshObject.hpp"
+#include "../vk/GPUTexture.hpp"
+#include "../vk/GPUMesh.hpp"
+#include "../vk/GPUMaterial.hpp"
+#include "../vk/Descriptors.hpp"
 
-#include "Descriptors.hpp"
-#include "FreeList.hpp"
+#include "../FreeList.hpp"
 
 #include <limits>
 #include <memory>
@@ -28,7 +28,6 @@ struct Handle {
     inline void destroy() {handle = DESTROYED_HANDLE;}
 };
 
-
 struct DrawMesh {
 	uint32_t firstVertex;
 	uint32_t firstIndex;
@@ -37,28 +36,28 @@ struct DrawMesh {
 	bool isMerged;
 
 	std::unique_ptr<GPUMesh> gpuData;
-    const Mesh* original;
-    uint32_t refCount = 0;
+    std::string tag;
 };
 
 struct DrawMaterial {
     std::unique_ptr<GPUMaterial> gpuData;
-    const Material* original;
-    uint32_t refCount = 0;
+    std::string tag;
 };
 
 struct RenderObject {
-    const MeshObject* meshObject;
-
     Handle<DrawMesh> mesh;
     Handle<DrawMaterial> material;
-    Handle<uint32_t> drawIndex;
-    uint32_t scissorWidth, scissorHeight;
+    std::string tag;
+};
+
+struct DrawCommand {
+    glm::mat4 transform;
+    uint32_t  object_id;
 };
 
 class RenderSystem;
 
-class RenderScene {
+class RenderService {
 private:
     Device& device;
     DescriptorPoolManager& pool;
@@ -68,13 +67,11 @@ private:
     FreeList<DrawMesh> meshes;
     FreeList<DrawMaterial> materials;
 
-	std::unordered_map<const Mesh*, Handle<DrawMesh>> meshConvert;
-    std::unordered_map<const Material*, Handle<DrawMaterial>> materialConvert;
+    std::unordered_map<std::string, Handle<RenderObject>> tagObject;
+    std::unordered_map<std::string, Handle<DrawMesh>> tagMeshMap;
+    std::unordered_map<std::string, Handle<DrawMaterial>> tagMaterialMap;
 
-    std::vector<Handle<RenderObject>> drawList;
-    
-    Handle<DrawMesh> getMeshHandle(const Mesh* mesh);
-    Handle<DrawMaterial> getMaterialHandle(const Material* material);
+    std::vector<DrawCommand> drawList;
 
     void deleteMeshDeffered(Handle<DrawMesh> &handle);
     void deleteMaterialDeffered(Handle<DrawMaterial> &handle);
@@ -86,14 +83,17 @@ private:
 
     friend class RenderSystem;
 public:
-    RenderScene(Device& device, DescriptorPoolManager& pool, DescriptorSetLayout& materialLayout);
+    RenderService(Device& device, DescriptorPoolManager& pool, DescriptorSetLayout& materialLayout);
 
-    Handle<RenderObject> registerObject(MeshObject* meshObject);
-    void attach(Handle<RenderObject> objectId);
-    void detach(Handle<RenderObject> objectId);
+    void render(Handle<RenderObject> id, const glm::mat4& transform);
 
-    void updateMeshData(const MeshObject* meshObject, Handle<RenderObject> objectId);
-    //void updateMaterialData(const MeshObject* meshObject, Handle<RenderObject> objectId);
+    Handle<RenderObject> registerRenderObject(RenderObject object);
+    
+    Handle<DrawMesh> createMeshHandle(const Mesh* mesh, std::string tag = "");
+    Handle<DrawMaterial> createMaterialHandle(const Material* material, std::string tag = "");
+
+    Handle<DrawMesh> getMeshHandle(std::string tag = "");
+    Handle<DrawMaterial> getMaterialHandle(std::string tag = "");
 
     void deleteObjectDeffered(Handle<RenderObject> objectId);
 };

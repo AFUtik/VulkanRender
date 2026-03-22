@@ -1,10 +1,10 @@
 #include "RenderSystem.hpp"
-#include "FrameInfo.hpp"
-#include "Pipeline.hpp"
-#include "RenderScene.hpp"
-#include "model/GPUTexture.hpp"
-#include "model/Mesh.hpp"
-#include "vulkan/vulkan_core.h"
+#include "RenderService.hpp"
+
+#include "../vk/FrameInfo.hpp"
+#include "../vk/Pipeline.hpp"
+#include "../vk/GPUTexture.hpp"
+#include "../model/Mesh.hpp"
 
 #include <memory>
 #include <stdexcept>
@@ -29,12 +29,6 @@ RenderSystem::RenderSystem(Device &device, VkRenderPass renderPass, std::vector<
 
 RenderSystem::~RenderSystem() {
 	vkDestroyPipelineLayout(device.device(), pipelineLayout, nullptr);
-}
-
-void RenderSystem::registerRenderer(std::shared_ptr<ObjectRenderer> renderer) {
-	renderer->renderSystem = this;
-	renderer->renderScene = renderScene.get();
-	renderers.push_back(renderer);
 }
 
 /*
@@ -82,7 +76,7 @@ void RenderSystem::createPipeline(VkRenderPass renderPass ,PipelineConfigInfo& p
 }
 
 void RenderSystem::render() {
-	for(auto& renderer : renderers) renderer->buildDrawList();
+	//for(auto& renderer : renderers) renderer->buildDrawList();
 
 	pipeline->bind(frame.commandBuffer);
 	vkCmdBindDescriptorSets(
@@ -94,12 +88,12 @@ void RenderSystem::render() {
 		&descriptorSets[frame.frameIndex].set,
 		0, nullptr
 	);
-	for(Handle<RenderObject> object : renderScene->drawList) {
-		if(!object.valid()) continue;
+	for(const DrawCommand& drawCommand : renderService->drawList) {
+		if(!Handle<RenderObject>::valid(drawCommand.object_id)) continue;
 
-		RenderObject& renderObject = renderScene->renderables[object.handle];
-		DrawMesh& drawMesh = renderScene->meshes[renderObject.mesh.handle];
-		DrawMaterial& drawMaterial = renderScene->materials[renderObject.material.handle];
+		RenderObject& renderObject = renderService->renderables[drawCommand.object_id];
+		DrawMesh& drawMesh = renderService->meshes[renderObject.mesh.handle];
+		DrawMaterial& drawMaterial = renderService->materials[renderObject.material.handle];
 
 		vkCmdPushConstants(
 			frame.commandBuffer,
@@ -107,27 +101,28 @@ void RenderSystem::render() {
 			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
 			0,
 			sizeof(PushConstantData),
-			&renderObject.meshObject->transform.matrix()
+			&drawCommand.transform
 		);
 
 		drawMaterial.gpuData->bind(frame.commandBuffer, pipelineLayout, frame.frameIndex);
 		drawMesh.gpuData->bind(frame.commandBuffer);
-		if(renderObject.scissorHeight > 0 && renderObject.scissorWidth > 0)
-		{
-			int x = (int)renderObject.meshObject->transform.getX();
-			int y = 1050 - (int)renderObject.meshObject->transform.getY();
-
-			VkRect2D vkRect{};
-			vkRect.offset = { x, y };
-			vkRect.extent = {
-				renderObject.scissorWidth,
-				renderObject.scissorHeight
-			};
-
-			vkCmdSetScissor(frame.commandBuffer, 0, 1, &vkRect);
-		}
-
 		drawMesh.gpuData->draw(frame.commandBuffer);
+		renderService->drawList.clear();
+
+		//if(renderObject.scissorHeight > 0 && renderObject.scissorWidth > 0)
+		//{
+		//	int x = (int)renderObject.meshObject->transform.getX();
+		//	int y = 1050 - (int)renderObject.meshObject->transform.getY();
+//
+		//	VkRect2D vkRect{};
+		//	vkRect.offset = { x, y };
+		//	vkRect.extent = {
+		//		renderObject.scissorWidth,
+		//		renderObject.scissorHeight
+		//	};
+//
+		//	vkCmdSetScissor(frame.commandBuffer, 0, 1, &vkRect);
+		//}
 	}
 }
 

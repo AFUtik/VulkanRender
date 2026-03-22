@@ -1,8 +1,5 @@
 #include "Pipeline.hpp"
-
-#include "model/GPUMesh.hpp"
-
-#include "vulkan/vulkan_core.h"
+#include "GPUMesh.hpp"
 
 #include <fstream>
 #include <iostream>

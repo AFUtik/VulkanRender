@@ -1,18 +1,13 @@
 #include "Engine.hpp"
-#include "Descriptors.hpp"
 
 #include "Fonts.hpp"
-#include "RenderSystem.hpp"
-#include "UIRenderSystem.hpp"
-#include "GlobalRenderSystem.hpp"
 
-#include "gui/GUIContext.hpp"
-#include "gui/GUIRendering.hpp"
-#include "gui/GuiContext.hpp"
-#include "model/GPUMesh.hpp"
-#include "model/GPUTexture.hpp"
-#include "model/Mesh.hpp"
-#include "model/Texture.hpp"
+#include "rendering/RenderService.hpp"
+#include "rendering/GlobalRenderSystem.hpp"
+
+//#include "gui/GUIContext.hpp"
+//#include "gui/GUIRendering.hpp"
+//#include "gui/GuiContext.hpp"
 #include "window/Events.hpp"
 
 #include <memory>
@@ -30,7 +25,7 @@
 
 using namespace myvk;
 
-Engine::Engine() : camera(window.width, window.height, glm::dvec3(0, 0, 5), glm::radians(90.0f)), frameInfo(0, 0.0f, VK_NULL_HANDLE, camera) {
+Engine::Engine() : camera(window.width, window.height, glm::dvec3(0, 0, 5), glm::radians(90.0f)), frameInfo(0, 0.0f, VK_NULL_HANDLE) {
 	Events::init(window.window);
 }
 
@@ -51,24 +46,44 @@ void Engine::run() {
 	FontHandler fontHandler;
 	fontHandler.createSample("Minecraft", absolutePath+"resources/fonts/minecraftRegular.otf");
 
-	GUIContext guiContext(Rect{window.width, window.height});
-	auto guiWindow = std::make_shared<GUIWindow>();
-	guiWindow->window.width = 700;
-	guiWindow->window.height = 500;
-	guiWindow->pos.x = 200;
-	guiWindow->pos.y = 200;
-	guiWindow->footer.height = 30;
-	guiContext.createWindow(guiWindow);
-	
-	GUIEventListener guiEventListener(&guiContext);
+	//GUIContext guiContext(Rect{window.width, window.height});
+	//auto guiWindow = std::make_shared<GUIWindow>();
+	//guiWindow->window.width = 700;
+	//guiWindow->window.height = 500;
+	//guiWindow->pos.x = 200;
+	//guiWindow->pos.y = 200;
+	//guiWindow->footer.height = 30;
+	//guiContext.createWindow(guiWindow);
+	//
+	//GUIEventListener guiEventListener(&guiContext);
 
-	UIRenderSystem uiRenderSystem(device, renderer.getSwapChainRenderPass(), renderer.getDescriptorPool(), frameInfo);
+	//UIRenderSystem uiRenderSystem(device, renderer.getSwapChainRenderPass(), renderer.getDescriptorPool(), frameInfo);
 	//std::shared_ptr<GUIRenderer> guiRenderer = std::make_shared<GUIRenderer>(&guiContext, &fontHandler);
 	//uiRenderSystem.registerRenderer(guiRenderer);
 	
 	//guiRenderer->fetchContext();
 
 	GlobalRenderSystem renderSystem(device, renderer.getSwapChainRenderPass(), renderer.getDescriptorPool(), frameInfo);
+	RenderService* service = renderSystem.getRenderService();
+
+	RenderObject renderObj;
+
+	Mesh mesh;
+	mesh.vertices.push_back({1.0f, 1.0f, 0.0f,   1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
+	mesh.vertices.push_back({1.0f, -1.0f, 0.0f,  1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f});
+	mesh.vertices.push_back({-1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f});
+	mesh.vertices.push_back({-1.0f, 1.0f, 0.0f,  0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
+
+	mesh.indices.push_back(0);
+	mesh.indices.push_back(1);
+	mesh.indices.push_back(2);
+	mesh.indices.push_back(2);
+	mesh.indices.push_back(3);
+	mesh.indices.push_back(0);
+
+	renderObj.mesh = service->createMeshHandle(&mesh);
+	renderObj.material = service->createMaterialHandle(nullptr);
+	Handle<RenderObject> obj_h = service->registerRenderObject(std::move(renderObj));
 
 	Events::toggle_cursor(&window);
 	double lastTime = glfwGetTime();
@@ -126,8 +141,9 @@ void Engine::run() {
 
 				camera.update();
 
-				renderSystem.renderGlobal();
-				uiRenderSystem.render();
+				service->render(obj_h, glm::mat4(1.0f));
+				renderSystem.renderGlobal(&camera);
+				//uiRenderSystem.render();
 
 				renderer.endSwapChainRenderPass(commandBuffer);
 				renderer.endFrame();

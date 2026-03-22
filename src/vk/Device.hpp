@@ -1,6 +1,7 @@
 #pragma once
 
-#include "window/Window.hpp"
+#include "../window/Window.hpp"
+
 #include <vma/vk_mem_alloc.h>
 
 #include <string>

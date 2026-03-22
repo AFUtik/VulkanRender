@@ -1,12 +1,6 @@
 ﻿#include <iostream>
 #include "Engine.hpp"
 
-#include "Atlas.hpp"
-#include "RenderSystem.hpp"
-#include "model/Texture.hpp"
-
-#include "Fonts.hpp"
-
 #include <string>
 
 int main()

@@ -1,5 +1,4 @@
 #include "Swapchain.hpp"
-#include "Device.hpp"
 
 // std
 #include <array>

@@ -1,13 +1,10 @@
 #include "UIRenderSystem.hpp"
-#include "Descriptors.hpp"
 
-#include "FrameInfo.hpp"
-#include "RenderScene.hpp"
+#include "RenderService.hpp"
 #include "glm/ext/matrix_float4x4.hpp"
 
 #include <locale>
 #include <codecvt>
-#include "Fonts.hpp"
 
 namespace myvk {
 
@@ -40,7 +37,7 @@ UIRenderSystem::UIRenderSystem(
 	config.colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
 	createPipeline(renderPass, config);
 
-	renderScene = std::make_unique<RenderScene>(device, *pool, *materialSetLayout);
+	renderService = std::make_unique<RenderService>(device, *pool, *materialSetLayout);
 }
 
 void UIRenderSystem::createUILayouts() {
@@ -74,11 +71,11 @@ void UIRenderSystem::createUILayouts() {
 			.build(descriptorSets[i]);
 	}
 
-	uniforms[0]->writeToBuffer(&frame.camera.getProjviewOrtho());
-	uniforms[0]->flush();
+	//uniforms[0]->writeToBuffer(&frame.camera.getProjviewOrtho());
+	//uniforms[0]->flush();
 
-	uniforms[1]->writeToBuffer(&frame.camera.getProjviewOrtho());
-	uniforms[1]->flush();
+	//uniforms[1]->writeToBuffer(&frame.camera.getProjviewOrtho());
+	//uniforms[1]->flush();
 }
 
 /*

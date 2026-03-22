@@ -1,15 +1,14 @@
 #pragma once
 
-#include "glm/gtc/type_precision.hpp"
-#include "vulkan/vulkan_core.h"
 #include "window/Events.hpp"
 #include "window/Window.hpp"
-#include "Renderer.hpp"
+
+#include "vk/Renderer.hpp"
+#include "vk/FrameInfo.hpp"
+#include "vk/Descriptors.hpp"
+#include "vk/Buffer.hpp"
 
 #include "Camera.hpp"
-#include "Descriptors.hpp"
-#include "Buffer.hpp"
-#include "FrameInfo.hpp"
 
 #include <memory>
 #include <vector>
